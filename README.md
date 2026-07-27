@@ -4,6 +4,11 @@ A pixel-accurate recreation of the Dhan trading app **Positions** screen, built 
 
 ![Dhan Positions Screen](./public/preview.png)
 
+## Live Demo
+
+- **Vercel:** [https://dhan-fno-06augsensex-open-nukalapavankarthik.vercel.app](https://dhan-fno-06augsensex-open-nukalapavankarthik.vercel.app)
+- **GitHub:** [https://github.com/karthikp974/dhan-fno-06augsensex-open-nukalapavankarthik](https://github.com/karthikp974/dhan-fno-06augsensex-open-nukalapavankarthik)
+
 ## Quick Start
 
 ```bash
