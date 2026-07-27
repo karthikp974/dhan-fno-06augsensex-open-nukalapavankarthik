@@ -106,20 +106,13 @@ export function getPnLValue(date = new Date()) {
   if (phase === 'closed') return CLOSED_PNL
 
   const { min, max } = RANGES[phase]
-  const { dateKey } = getISTClock(date)
 
-  if (isMarketHours(date)) {
-    const live = oscillate(min, max, Date.now() / 400)
-    saveFrozenPnL(dateKey, live)
-    return live
+  if (isWeekdayIST(date)) {
+    return oscillate(min, max, Date.now() / 400)
   }
 
-  const frozen = loadFrozenPnL(dateKey)
-  if (frozen !== null) return frozen
-
-  const fallback = getDeterministicFrozenPnl(phase, dateKey)
-  saveFrozenPnL(dateKey, fallback)
-  return fallback
+  const { dateKey } = getISTClock(date)
+  return getDeterministicFrozenPnl(phase, dateKey)
 }
 
 export function formatPnL(value) {
@@ -136,7 +129,7 @@ export function getPositionState(date = new Date()) {
   const phase = getPositionPhase(date)
   const pnl = getPnLValue(date)
   const isRunning = !manualExit && phase !== 'closed'
-  const isLive = isRunning && isMarketHours(date)
+  const isLive = isRunning && isWeekdayIST(date)
   const ist = getISTClock(date)
 
   return {

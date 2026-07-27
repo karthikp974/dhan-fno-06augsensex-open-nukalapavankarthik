@@ -20,10 +20,10 @@ export default function useLivePnL() {
 
     const interval = setInterval(() => {
       const next = getPositionState()
-      if (next.isLive) {
+      if (next.isRunning) {
         setState(next)
       }
-    }, 600)
+    }, 400)
 
     const unsubscribe = subscribePositionExit(update)
     return () => {

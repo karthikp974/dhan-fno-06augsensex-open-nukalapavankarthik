@@ -8,6 +8,7 @@ export default function PositionsPage() {
     isProfit,
     isRunning,
     isLive,
+    phase,
     sectionTitle,
     statusLabel,
     exitInfo,
@@ -79,7 +80,9 @@ export default function PositionsPage() {
             </span>
             <span>
               {isLive
-                ? 'Live P&L updating during market hours (9:15 AM – 3:15 PM).'
+                ? phase === 'profit'
+                  ? 'Live P&L shuffling between ₹8,00,000 – ₹8,10,000.'
+                  : 'Live P&L shuffling between ₹10.5L – ₹11.5L loss.'
                 : isRunning
                   ? 'Market closed for today. P&L is frozen until next session (9:15 AM).'
                   : exitInfo
