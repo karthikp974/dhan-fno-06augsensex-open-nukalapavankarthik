@@ -5,6 +5,8 @@ const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const CLOSED_PNL = -1102840
 const MARKET_OPEN = 9 * 60 + 15
 const MARKET_CLOSE = 15 * 60 + 15
+const PROFIT_SHUFFLE_END = 15 * 60 + 29
+const PROFIT_FIXED_PNL = 837000
 
 export const RANGES = {
   profit: { min: 800000, max: 810000 },
@@ -98,6 +100,13 @@ function getDeterministicFrozenPnl(phase, dateKey) {
   return Math.round(mid + amp * Math.sin(seed * 0.017) * 0.85)
 }
 
+export function isProfitShuffling(date = new Date()) {
+  if (!isWeekdayIST(date)) return false
+  if (getPositionPhase(date) !== 'profit') return false
+  const { totalMinutes } = getISTClock(date)
+  return totalMinutes <= PROFIT_SHUFFLE_END
+}
+
 export function getPnLValue(date = new Date()) {
   const manualExit = getManualExit()
   if (manualExit) return manualExit.pnl
@@ -105,9 +114,19 @@ export function getPnLValue(date = new Date()) {
   const phase = getPositionPhase(date)
   if (phase === 'closed') return CLOSED_PNL
 
-  const { min, max } = RANGES[phase]
+  if (phase === 'profit') {
+    const { totalMinutes } = getISTClock(date)
+    if (totalMinutes > PROFIT_SHUFFLE_END) {
+      return PROFIT_FIXED_PNL
+    }
+    if (isWeekdayIST(date)) {
+      const { min, max } = RANGES.profit
+      return oscillate(min, max, Date.now() / 400)
+    }
+  }
 
-  if (isWeekdayIST(date)) {
+  if (phase === 'loss' && isWeekdayIST(date)) {
+    const { min, max } = RANGES.loss
     return oscillate(min, max, Date.now() / 400)
   }
 
@@ -129,7 +148,10 @@ export function getPositionState(date = new Date()) {
   const phase = getPositionPhase(date)
   const pnl = getPnLValue(date)
   const isRunning = !manualExit && phase !== 'closed'
-  const isLive = isRunning && isWeekdayIST(date)
+  const isLive =
+    isRunning &&
+    ((phase === 'profit' && isProfitShuffling(date)) ||
+      (phase === 'loss' && isWeekdayIST(date)))
   const ist = getISTClock(date)
 
   return {

@@ -20,7 +20,7 @@ export default function useLivePnL() {
 
     const interval = setInterval(() => {
       const next = getPositionState()
-      if (next.isRunning) {
+      if (next.isLive) {
         setState(next)
       }
     }, 400)

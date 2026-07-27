@@ -84,7 +84,9 @@ export default function PositionsPage() {
                   ? 'Live P&L shuffling between ₹8,00,000 – ₹8,10,000.'
                   : 'Live P&L shuffling between ₹10.5L – ₹11.5L loss.'
                 : isRunning
-                  ? 'Market closed for today. P&L is frozen until next session (9:15 AM).'
+                  ? phase === 'profit'
+                    ? 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
+                    : 'Market closed for today. P&L is frozen until next session (9:15 AM).'
                   : exitInfo
                     ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
                     : 'Position squared off on 06 Aug. Verified by Dhan.'}
