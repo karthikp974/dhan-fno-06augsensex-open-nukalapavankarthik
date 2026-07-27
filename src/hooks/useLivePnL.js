@@ -6,9 +6,25 @@ export default function useLivePnL() {
   const [state, setState] = useState(() => getPositionState())
 
   useEffect(() => {
-    const update = () => setState(getPositionState())
+    const update = () => {
+      const next = getPositionState()
+      setState((prev) => {
+        if (!next.isLive && prev.pnl === next.pnl && prev.isLive === next.isLive) {
+          return prev
+        }
+        return next
+      })
+    }
+
     update()
-    const interval = setInterval(update, 600)
+
+    const interval = setInterval(() => {
+      const next = getPositionState()
+      if (next.isLive) {
+        setState(next)
+      }
+    }, 600)
+
     const unsubscribe = subscribePositionExit(update)
     return () => {
       clearInterval(interval)
