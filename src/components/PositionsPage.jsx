@@ -81,7 +81,7 @@ export default function PositionsPage() {
               {isLive
                 ? 'Live P&L updating during market hours (9:15 AM – 3:15 PM).'
                 : isRunning
-                  ? 'Market closed. P&L will update on next trading session.'
+                  ? 'Market closed for today. P&L is frozen until next session (9:15 AM).'
                   : exitInfo
                     ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
                     : 'Position squared off on 06 Aug. Verified by Dhan.'}

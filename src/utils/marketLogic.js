@@ -3,6 +3,8 @@ import { getManualExit } from './positionExit'
 const TUESDAY_START = new Date('2026-07-28T09:15:00+05:30')
 const AUTO_SELL = new Date('2026-08-06T09:15:00+05:30')
 const CLOSED_PNL = -1102840
+const MARKET_OPEN = 9 * 60 + 15
+const MARKET_CLOSE = 15 * 60 + 15
 
 export const RANGES = {
   profit: { min: 790000, max: 810000 },
@@ -10,7 +12,28 @@ export const RANGES = {
 }
 
 export function getISTNow() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
+
+  const parts = Object.fromEntries(
+    formatter.formatToParts(new Date()).map((p) => [p.type, p.value]),
+  )
+
+  return new Date(
+    `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+05:30`,
+  )
+}
+
+function getISTDateKey(now = getISTNow()) {
+  return now.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }
 
 export function isWeekday(date) {
@@ -18,10 +41,10 @@ export function isWeekday(date) {
   return day >= 1 && day <= 5
 }
 
-export function isMarketHours(date) {
+export function isMarketHours(date = getISTNow()) {
   if (!isWeekday(date)) return false
   const minutes = date.getHours() * 60 + date.getMinutes()
-  return minutes >= 9 * 60 + 15 && minutes <= 15 * 60 + 15
+  return minutes >= MARKET_OPEN && minutes <= MARKET_CLOSE
 }
 
 export function getPositionPhase(now = getISTNow()) {
@@ -39,21 +62,45 @@ function oscillate(min, max, tick) {
   return Math.round(wave + noise)
 }
 
+function getSessionStorageKey(dateKey) {
+  return `dhan_frozen_pnl_${dateKey}`
+}
+
+function saveFrozenPnL(dateKey, pnl) {
+  try {
+    sessionStorage.setItem(getSessionStorageKey(dateKey), String(pnl))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function loadFrozenPnL(dateKey) {
+  try {
+    const saved = sessionStorage.getItem(getSessionStorageKey(dateKey))
+    return saved ? Number(saved) : null
+  } catch {
+    return null
+  }
+}
+
 export function getPnLValue(now = getISTNow()) {
   const manualExit = getManualExit()
   if (manualExit) return manualExit.pnl
 
   const phase = getPositionPhase(now)
-
-  if (phase === 'closed') {
-    return CLOSED_PNL
-  }
+  if (phase === 'closed') return CLOSED_PNL
 
   const { min, max } = RANGES[phase]
+  const dateKey = getISTDateKey(now)
 
   if (isMarketHours(now)) {
-    return oscillate(min, max, Date.now() / 400)
+    const live = oscillate(min, max, Date.now() / 400)
+    saveFrozenPnL(dateKey, live)
+    return live
   }
+
+  const frozen = loadFrozenPnL(dateKey)
+  if (frozen !== null) return frozen
 
   return Math.round((min + max) / 2)
 }
