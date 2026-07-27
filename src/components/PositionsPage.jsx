@@ -152,6 +152,14 @@ export default function PositionsPage() {
         )}
       </section>
 
+      {isRunning && showPosition && (
+        <div className="dhan-exit-bar">
+          <button className="dhan-exit-bar-btn" onClick={handleExit}>
+            Exit Position
+          </button>
+        </div>
+      )}
+
       <FooterBrand />
     </>
   )
