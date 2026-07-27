@@ -1,4 +1,4 @@
-import { getISTNow, getPositionPhase } from './marketLogic'
+import { getPositionPhase } from './marketLogic'
 import { getManualExit } from './positionExit'
 
 function getSensexOrders(phase) {
@@ -65,7 +65,7 @@ function getSensexOrders(phase) {
   return [...buys, sell]
 }
 
-export function getAllOrders(now = getISTNow()) {
+export function getAllOrders(now = new Date()) {
   const phase = getPositionPhase(now)
   return getSensexOrders(phase).sort((a, b) => b.sortKey - a.sortKey)
 }
