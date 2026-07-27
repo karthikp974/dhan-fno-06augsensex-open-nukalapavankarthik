@@ -1,0 +1,22 @@
+import { useState } from 'react'
+import DhanHeader from './DhanHeader'
+import PositionsPage from './PositionsPage'
+import OrdersPage from './OrdersPage'
+import BottomNav from './BottomNav'
+import './DhanPositionsReplica.css'
+
+export default function DhanApp() {
+  const [activeTab, setActiveTab] = useState('positions')
+
+  return (
+    <div className="dhan-app">
+      <DhanHeader activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <div className="dhan-page-content">
+        {activeTab === 'positions' ? <PositionsPage /> : <OrdersPage />}
+      </div>
+
+      <BottomNav />
+    </div>
+  )
+}
