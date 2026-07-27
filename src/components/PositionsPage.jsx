@@ -79,7 +79,7 @@ export default function PositionsPage() {
             </span>
             <span>
               {isLive
-                ? 'Live P&L updating during market hours (9:15 AM – 3:30 PM).'
+                ? 'Live P&L updating during market hours (9:15 AM – 3:15 PM).'
                 : isRunning
                   ? 'Market closed. P&L will update on next trading session.'
                   : exitInfo

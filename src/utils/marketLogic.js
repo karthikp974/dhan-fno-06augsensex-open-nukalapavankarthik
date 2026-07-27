@@ -21,7 +21,7 @@ export function isWeekday(date) {
 export function isMarketHours(date) {
   if (!isWeekday(date)) return false
   const minutes = date.getHours() * 60 + date.getMinutes()
-  return minutes >= 9 * 60 + 15 && minutes <= 15 * 60 + 30
+  return minutes >= 9 * 60 + 15 && minutes <= 15 * 60 + 15
 }
 
 export function getPositionPhase(now = getISTNow()) {
