@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import FooterBrand from './FooterBrand'
+import { useEffect, useState } from 'react'
 import useLivePnL from '../hooks/useLivePnL'
 
 export default function PositionsPage() {
   const {
+    pnl,
     formattedPnL,
     isProfit,
     isRunning,
@@ -16,6 +16,14 @@ export default function PositionsPage() {
   } = useLivePnL()
   const [activeFilter, setActiveFilter] = useState('all')
   const [positionSelected, setPositionSelected] = useState(false)
+  const [pnlBump, setPnlBump] = useState(false)
+
+  useEffect(() => {
+    if (!isLive) return undefined
+    setPnlBump(true)
+    const timer = setTimeout(() => setPnlBump(false), 400)
+    return () => clearTimeout(timer)
+  }, [pnl, isLive])
   const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
 
   const handleExit = () => {
@@ -66,7 +74,9 @@ export default function PositionsPage() {
           </div>
           <div className="dhan-pnl-amount">
             <span className={`dhan-rupee ${pnlClass}`}>₹</span>
-            <span className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}`}>
+            <span
+              className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}`}
+            >
               {formattedPnL}
             </span>
             <span className="dhan-pnl-positions">on 1 positions</span>
@@ -82,11 +92,11 @@ export default function PositionsPage() {
               {isLive
                 ? phase === 'profit'
                   ? 'Live P&L shuffling between ₹8,00,000 – ₹8,10,000.'
-                  : 'Live P&L shuffling between ₹10.5L – ₹11.5L loss.'
+                  : '5L drop at 9:20 AM, moving toward max loss ₹2,86,160 by 3:30 PM.'
                 : isRunning
                   ? phase === 'profit'
                     ? 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
-                    : 'Market closed for today. P&L is frozen until next session (9:15 AM).'
+                    : 'Max loss capped at ₹2,86,160. Closed for today after 3:30 PM.'
                   : exitInfo
                     ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
                     : 'Position squared off on 06 Aug. Verified by Dhan.'}
@@ -149,7 +159,9 @@ export default function PositionsPage() {
           >
             <div className="dhan-position-header">
               <span className="dhan-position-name">SENSEX 06 Aug 74400 CALL</span>
-              <span className={`dhan-position-pnl ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}`}>
+              <span
+                className={`dhan-position-pnl ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}`}
+              >
                 {formattedPnL}
               </span>
             </div>
@@ -181,8 +193,6 @@ export default function PositionsPage() {
           </p>
         )}
       </section>
-
-      <FooterBrand />
     </>
   )
 }

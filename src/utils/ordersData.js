@@ -1,6 +1,6 @@
 import { getPositionPhase } from './marketLogic'
 import { getManualExit } from './positionExit'
-
+import { getCurrentTime } from './timeOverride'
 function getSensexOrders(phase) {
   const buys = [
     {
@@ -65,7 +65,7 @@ function getSensexOrders(phase) {
   return [...buys, sell]
 }
 
-export function getAllOrders(now = new Date()) {
+export function getAllOrders(now = getCurrentTime()) {
   const phase = getPositionPhase(now)
   return getSensexOrders(phase).sort((a, b) => b.sortKey - a.sortKey)
 }

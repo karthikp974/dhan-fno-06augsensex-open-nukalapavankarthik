@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import FooterBrand from './FooterBrand'
 import useOrders from '../hooks/useOrders'
 import {
   ORDER_FILTERS,
@@ -92,8 +91,6 @@ export default function OrdersPage() {
           <p className="dhan-empty-filter">{EMPTY_MESSAGES[activeFilter]}</p>
         )}
       </section>
-
-      <FooterBrand />
     </>
   )
 }
