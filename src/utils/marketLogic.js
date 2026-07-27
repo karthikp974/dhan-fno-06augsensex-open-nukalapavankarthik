@@ -1,3 +1,5 @@
+import { getManualExit } from './positionExit'
+
 const TUESDAY_START = new Date('2026-07-28T09:15:00+05:30')
 const AUTO_SELL = new Date('2026-08-06T09:15:00+05:30')
 const CLOSED_PNL = -1102840
@@ -23,6 +25,7 @@ export function isMarketHours(date) {
 }
 
 export function getPositionPhase(now = getISTNow()) {
+  if (getManualExit()) return 'closed'
   if (now >= AUTO_SELL) return 'closed'
   if (now >= TUESDAY_START) return 'loss'
   return 'profit'
@@ -37,6 +40,9 @@ function oscillate(min, max, tick) {
 }
 
 export function getPnLValue(now = getISTNow()) {
+  const manualExit = getManualExit()
+  if (manualExit) return manualExit.pnl
+
   const phase = getPositionPhase(now)
 
   if (phase === 'closed') {
@@ -62,9 +68,10 @@ export function formatPnL(value) {
 }
 
 export function getPositionState(now = getISTNow()) {
+  const manualExit = getManualExit()
   const phase = getPositionPhase(now)
   const pnl = getPnLValue(now)
-  const isRunning = phase !== 'closed'
+  const isRunning = !manualExit && phase !== 'closed'
   const isLive = isRunning && isMarketHours(now)
 
   return {
@@ -76,5 +83,6 @@ export function getPositionState(now = getISTNow()) {
     formattedPnL: formatPnL(pnl),
     sectionTitle: isRunning ? 'Open Positions' : 'Closed Positions',
     statusLabel: isRunning ? 'Running' : 'Closed',
+    exitInfo: manualExit,
   }
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getAllOrders, getOrderCounts } from '../utils/ordersData'
 
+import { subscribePositionExit } from '../utils/positionExit'
+
 export default function useOrders() {
   const [orders, setOrders] = useState(() => getAllOrders())
   const [counts, setCounts] = useState(() => getOrderCounts(getAllOrders()))
@@ -13,7 +15,11 @@ export default function useOrders() {
     }
     update()
     const interval = setInterval(update, 1000)
-    return () => clearInterval(interval)
+    const unsubscribe = subscribePositionExit(update)
+    return () => {
+      clearInterval(interval)
+      unsubscribe()
+    }
   }, [])
 
   return { orders, counts }

@@ -3,9 +3,25 @@ import FooterBrand from './FooterBrand'
 import useLivePnL from '../hooks/useLivePnL'
 
 export default function PositionsPage() {
-  const { formattedPnL, isProfit, isRunning, isLive, sectionTitle, statusLabel } = useLivePnL()
+  const {
+    formattedPnL,
+    isProfit,
+    isRunning,
+    isLive,
+    sectionTitle,
+    statusLabel,
+    exitInfo,
+    exitPosition,
+  } = useLivePnL()
   const [activeFilter, setActiveFilter] = useState('all')
   const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
+
+  const handleExit = () => {
+    const message = `Exit SENSEX 06 Aug 74400 CALL at current P&L of ₹ ${formattedPnL}?`
+    if (window.confirm(message)) {
+      exitPosition()
+    }
+  }
 
   const showPosition =
     activeFilter === 'all' ||
@@ -58,7 +74,9 @@ export default function PositionsPage() {
                 ? 'Live P&L updating during market hours (9:15 AM – 3:30 PM).'
                 : isRunning
                   ? 'Market closed. P&L will update on next trading session.'
-                  : 'Position squared off on 06 Aug. Verified by Dhan.'}
+                  : exitInfo
+                    ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
+                    : 'Position squared off on 06 Aug. Verified by Dhan.'}
             </span>
           </div>
         </div>
@@ -121,6 +139,11 @@ export default function PositionsPage() {
                 {statusLabel}
               </span>
             </div>
+            {isRunning && (
+              <button className="dhan-exit-btn" onClick={handleExit}>
+                Exit
+              </button>
+            )}
           </div>
         ) : (
           <p className="dhan-empty-filter">

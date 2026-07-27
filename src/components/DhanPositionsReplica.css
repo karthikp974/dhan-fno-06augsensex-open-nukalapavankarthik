@@ -419,6 +419,24 @@
   font-weight: 600;
 }
 
+.dhan-exit-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1.5px solid #e53935;
+  border-radius: 8px;
+  background: #fff;
+  color: #e53935;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dhan-exit-btn:active {
+  background: #fdecea;
+}
+
 .dhan-empty-filter {
   text-align: center;
   color: var(--text-muted);

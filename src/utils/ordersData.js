@@ -1,4 +1,5 @@
 import { getISTNow, getPositionPhase } from './marketLogic'
+import { getManualExit } from './positionExit'
 
 function getSensexOrders(phase) {
   const buys = [
@@ -30,20 +31,22 @@ function getSensexOrders(phase) {
     },
   ]
 
+  const manualExit = getManualExit()
+
   const sell =
-    phase === 'closed'
+    phase === 'closed' || manualExit
       ? {
           id: 3,
           name: 'SENSEX 06 Aug 74400 CALL',
           side: 'S',
           type: 'Normal',
           qty: 1460,
-          price: 118.4,
+          price: manualExit?.sellPrice ?? 118.4,
           exchange: 'BSE',
           status: 'Executed',
-          date: '06 Aug 2026',
-          time: '09:16 AM',
-          sortKey: new Date('2026-08-06T09:16:00+05:30').getTime(),
+          date: manualExit?.date ?? '06 Aug 2026',
+          time: manualExit?.time ?? '09:16 AM',
+          sortKey: manualExit?.sortKey ?? new Date('2026-08-06T09:16:00+05:30').getTime(),
         }
       : {
           id: 3,
