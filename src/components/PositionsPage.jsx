@@ -14,12 +14,20 @@ export default function PositionsPage() {
     exitPosition,
   } = useLivePnL()
   const [activeFilter, setActiveFilter] = useState('all')
+  const [positionSelected, setPositionSelected] = useState(false)
   const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
 
   const handleExit = () => {
     const message = `Exit SENSEX 06 Aug 74400 CALL at current P&L of ₹ ${formattedPnL}?`
     if (window.confirm(message)) {
       exitPosition()
+      setPositionSelected(false)
+    }
+  }
+
+  const handlePositionTap = () => {
+    if (isRunning) {
+      setPositionSelected((prev) => !prev)
     }
   }
 
@@ -122,7 +130,18 @@ export default function PositionsPage() {
       <section className="dhan-positions">
         <h2 className="dhan-section-title">{sectionTitle}</h2>
         {showPosition ? (
-          <div className="dhan-position-card">
+          <div
+            className={`dhan-position-card${positionSelected && isRunning ? ' selected' : ''}${isRunning ? ' tappable' : ''}`}
+            onClick={handlePositionTap}
+            role={isRunning ? 'button' : undefined}
+            tabIndex={isRunning ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (isRunning && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                handlePositionTap()
+              }
+            }}
+          >
             <div className="dhan-position-header">
               <span className="dhan-position-name">SENSEX 06 Aug 74400 CALL</span>
               <span className={`dhan-position-pnl ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}`}>
@@ -139,8 +158,14 @@ export default function PositionsPage() {
                 {statusLabel}
               </span>
             </div>
-            {isRunning && (
-              <button className="dhan-exit-btn" onClick={handleExit}>
+            {isRunning && positionSelected && (
+              <button
+                className="dhan-exit-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleExit()
+                }}
+              >
                 Exit
               </button>
             )}
@@ -151,14 +176,6 @@ export default function PositionsPage() {
           </p>
         )}
       </section>
-
-      {isRunning && showPosition && (
-        <div className="dhan-exit-bar">
-          <button className="dhan-exit-bar-btn" onClick={handleExit}>
-            Exit Position
-          </button>
-        </div>
-      )}
 
       <FooterBrand />
     </>
