@@ -7,7 +7,7 @@ const MARKET_OPEN = 9 * 60 + 15
 const MARKET_CLOSE = 15 * 60 + 15
 
 export const RANGES = {
-  profit: { min: 790000, max: 810000 },
+  profit: { min: 800000, max: 810000 },
   loss: { min: -1150000, max: -1050000 },
 }
 
