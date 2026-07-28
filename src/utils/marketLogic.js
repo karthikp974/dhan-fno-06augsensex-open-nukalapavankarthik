@@ -183,6 +183,20 @@ export function getPnLValue(date = getCurrentTime()) {
   return getScheduledPnL(date)
 }
 
+const JITTER = 5000
+const TICK_MS = 3000
+
+/** Same P&L on every device — jitter derived from clock time, not random. */
+export function getDisplayPnL(date = getCurrentTime()) {
+  const scheduled = getScheduledPnL(date)
+  if (!isLiveSession(date)) return scheduled
+
+  const tick = Math.floor(date.getTime() / TICK_MS)
+  const wave = Math.sin(tick * 0.73) * JITTER * 0.55
+  const wave2 = Math.cos(tick * 0.41) * JITTER * 0.45
+  return clampPnL(Math.round(scheduled + wave + wave2))
+}
+
 export function formatPnL(value) {
   const abs = Math.abs(value)
   const formatted = abs.toLocaleString('en-IN', {

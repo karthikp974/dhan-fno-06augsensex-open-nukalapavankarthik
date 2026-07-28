@@ -12,7 +12,6 @@ export default function PositionsPage() {
     isProfit,
     isRunning,
     isLive,
-    phase,
     sectionTitle,
     statusLabel,
     shuffleEnabled,
@@ -54,27 +53,6 @@ export default function PositionsPage() {
     (activeFilter === 'profit' && isProfit) ||
     (activeFilter === 'loss' && !isProfit)
 
-  const statusMessage = (() => {
-    if (isLive) {
-      if (phase === 'profit') return 'Live P&L shuffling ±₹5,000 around current value.'
-      if (phase === 'tuesday_shuffle') {
-        return 'Live P&L shuffling ±₹5,000, closing at ₹7,20,000 by 3:15 PM IST.'
-      }
-      if (phase === 'decline') {
-        return 'Live P&L shuffling ±₹5,000 from ₹1,27,839 toward max loss by 3:15 PM IST.'
-      }
-      return 'Live P&L shuffling ±₹5,000 around current value.'
-    }
-    if (isRunning) {
-      if (!shuffleEnabled) return 'P&L shuffle paused. Tap profit 7× to edit.'
-      if (phase === 'frozen') return 'Today\'s P&L closed at ₹7,20,000.00 after 3:15 PM IST.'
-      if (phase === 'decline_frozen') return 'P&L frozen for today after 3:15 PM IST.'
-      if (phase === 'profit') return 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
-      return 'P&L closed for today after 3:15 PM IST.'
-    }
-    return 'Position squared off on 06 Aug. Verified by Dhan.'
-  })()
-
   return (
     <>
       <div className={`dhan-pnl-card ${pnlClass}`}>
@@ -106,15 +84,6 @@ export default function PositionsPage() {
               {formattedPnL}
             </span>
             <span className="dhan-pnl-positions">on 1 positions</span>
-          </div>
-          <div className="dhan-pnl-verified">
-            <span className="dhan-verified-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" fill="#2196F3" />
-                <path d="M8 12l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span>{statusMessage}</span>
           </div>
         </div>
       </div>

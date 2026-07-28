@@ -1,128 +1,76 @@
-import { createContext, createElement, useContext, useEffect, useRef, useState } from 'react'
-import { formatPnL, getPositionState, getScheduledPnL } from '../utils/marketLogic'
-import { getPnlOverride, setPnlOverride, subscribePnlOverride } from '../utils/pnlOverride'
-import { exitPosition, subscribePositionExit } from '../utils/positionExit'
+import { createContext, createElement, useContext, useEffect, useState } from 'react'
+import {
+  formatPnL,
+  getDisplayPnL,
+  getPositionState,
+  getScheduledPnL,
+} from '../utils/marketLogic'
 
 const MAX_LOSS = -286160
-const JITTER = 5000
-const MIN_TICK_MS = 2_500
-const MAX_TICK_MS = 4_000
+const SYNC_MS = 1000
 const PHASE_CHECK_MS = 30_000
 
-function nextTickDelay() {
-  return MIN_TICK_MS + Math.random() * (MAX_TICK_MS - MIN_TICK_MS)
-}
+const DEFAULT_OVERRIDE = { customValue: null, shuffleEnabled: true }
 
-function clampPnL(pnl) {
-  return Math.max(pnl, MAX_LOSS)
-}
-
-function jitterPnL(current) {
-  const delta = Math.round((Math.random() * 2 - 1) * JITTER)
-  return clampPnL(current + delta)
-}
-
-function composeState(base, pnl, override) {
-  const shuffling = base.marketLive && override.shuffleEnabled
+function composeState(base, pnl, shuffleEnabled) {
+  const shuffling = base.marketLive && shuffleEnabled
   return {
     ...base,
     pnl,
     isLive: shuffling,
     isProfit: pnl >= 0,
     formattedPnL: formatPnL(pnl),
-    shuffleEnabled: override.shuffleEnabled,
-    hasCustomValue: override.customValue !== null,
+    shuffleEnabled,
   }
+}
+
+function computePnL(override) {
+  const live = getDisplayPnL()
+
+  if (override.customValue !== null && !override.shuffleEnabled) {
+    return override.customValue
+  }
+
+  if (override.customValue !== null && override.shuffleEnabled) {
+    const scheduled = getScheduledPnL()
+    const delta = live - scheduled
+    return Math.max(MAX_LOSS, Math.round(override.customValue + delta))
+  }
+
+  return live
 }
 
 const LivePnLContext = createContext(null)
 
 function useLivePnLState() {
-  const displayRef = useRef(null)
-  const phaseRef = useRef(getPositionState().phase)
+  const [override, setOverride] = useState(DEFAULT_OVERRIDE)
 
   const [state, setState] = useState(() => {
-    const override = getPnlOverride()
     const base = getPositionState()
-    const anchor =
-      override.customValue !== null ? override.customValue : getScheduledPnL()
-    displayRef.current = anchor
-    return composeState(base, anchor, override)
+    return composeState(base, computePnL(DEFAULT_OVERRIDE), true)
   })
 
-  function sync({ shuffleStep = false, resetDisplay = false } = {}) {
-    const base = getPositionState()
-    const override = getPnlOverride()
-    const scheduled = getScheduledPnL()
-
-    if (resetDisplay || phaseRef.current !== base.phase) {
-      phaseRef.current = base.phase
-      displayRef.current = null
-    }
-
-    const anchor =
-      override.customValue !== null ? override.customValue : scheduled
-
-    if (displayRef.current === null) {
-      displayRef.current = anchor
-    }
-
-    const shuffling = base.marketLive && override.shuffleEnabled
-
-    if (shuffling && shuffleStep) {
-      displayRef.current = jitterPnL(displayRef.current)
-    } else if (!shuffling) {
-      displayRef.current = anchor
-    }
-
-    const next = composeState(base, displayRef.current, override)
-    setState(next)
-    return next
-  }
-
   useEffect(() => {
-    let timeoutId
-    let cancelled = false
-
-    const scheduleTick = () => {
-      if (cancelled) return
-      clearTimeout(timeoutId)
-      const next = sync({ shuffleStep: true })
-      if (next.isLive) {
-        timeoutId = setTimeout(scheduleTick, nextTickDelay())
-      }
+    const sync = () => {
+      const base = getPositionState()
+      const pnl = computePnL(override)
+      setState(composeState(base, pnl, override.shuffleEnabled))
     }
 
-    const restart = (resetDisplay = false) => {
-      clearTimeout(timeoutId)
-      const next = sync({ resetDisplay })
-      if (next.isLive) {
-        timeoutId = setTimeout(scheduleTick, nextTickDelay())
-      }
-    }
-
-    restart()
-
-    const unsubExit = subscribePositionExit(() => restart(true))
-    const unsubOverride = subscribePnlOverride(() => restart(true))
-    const phaseCheck = setInterval(() => restart(), PHASE_CHECK_MS)
-
+    sync()
+    const tick = setInterval(sync, SYNC_MS)
+    const phaseCheck = setInterval(sync, PHASE_CHECK_MS)
     return () => {
-      cancelled = true
-      clearTimeout(timeoutId)
+      clearInterval(tick)
       clearInterval(phaseCheck)
-      unsubExit()
-      unsubOverride()
     }
-  }, [])
-
-  const exit = () => exitPosition(sync().pnl)
+  }, [override])
 
   const applyOverride = (partial) => {
-    setPnlOverride(partial)
+    setOverride((prev) => ({ ...prev, ...partial }))
   }
 
-  return { ...state, exitPosition: exit, applyOverride }
+  return { ...state, applyOverride }
 }
 
 export function LivePnLProvider({ children }) {
