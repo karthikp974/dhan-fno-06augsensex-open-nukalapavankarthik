@@ -81,14 +81,6 @@ export function getPositionPhase(date = getCurrentTime()) {
   return 'profit'
 }
 
-function oscillate(min, max, tick) {
-  const mid = (min + max) / 2
-  const amp = (max - min) / 2
-  const wave = mid + amp * Math.sin(tick * 0.12)
-  const noise = (Math.random() - 0.5) * amp * 0.2
-  return clampPnL(Math.round(wave + noise))
-}
-
 function getLossLinearPnL(date) {
   const { totalMinutes } = getISTClock(date)
 
@@ -105,14 +97,6 @@ function getLossLinearPnL(date) {
   return MAX_LOSS
 }
 
-function getLossLivePnL(date, liveSeed = Date.now()) {
-  const base = getLossLinearPnL(date)
-  const band = Math.max(25_000, Math.round(Math.abs(base - MAX_LOSS) * 0.08))
-  const min = clampPnL(base - band)
-  const max = clampPnL(base + band)
-  return oscillate(min, max, liveSeed / 350)
-}
-
 export function isProfitShuffling(date = getCurrentTime()) {
   if (!isWeekdayIST(date)) return false
   if (getPositionPhase(date) !== 'profit') return false
@@ -127,41 +111,41 @@ export function isLossAnimating(date = getCurrentTime()) {
   return totalMinutes >= LOSS_SESSION_START && totalMinutes <= MARKET_CLOSE
 }
 
-export function getPnLValue(date = getCurrentTime(), liveSeed = Date.now()) {
+export function isLiveSession(date = getCurrentTime()) {
+  if (getManualExit()) return false
+  if (getPositionPhase(date) === 'closed') return false
+  return (
+    isProfitShuffling(date) || isTuesdayShuffleSession(date) || isLossAnimating(date)
+  )
+}
+
+/** Deterministic P&L anchor (no live jitter). */
+export function getScheduledPnL(date = getCurrentTime()) {
   const manualExit = getManualExit()
   if (manualExit) return clampPnL(manualExit.pnl)
 
   const phase = getPositionPhase(date)
   if (phase === 'closed') return MAX_LOSS
 
-  if (phase === 'tuesday_shuffle') {
-    const { min, max } = RANGES.tuesday
-    return oscillate(min, max, liveSeed / 350)
-  }
+  if (phase === 'tuesday_shuffle') return 780000
 
   if (phase === 'profit') {
     const { totalMinutes } = getISTClock(date)
-    if (totalMinutes > PROFIT_SHUFFLE_END) {
-      return PROFIT_FIXED_PNL
-    }
-    if (isWeekdayIST(date) && isProfitShuffling(date)) {
-      const { min, max } = RANGES.profit
-      return oscillate(min, max, liveSeed / 350)
-    }
+    if (totalMinutes > PROFIT_SHUFFLE_END) return PROFIT_FIXED_PNL
+    if (isProfitShuffling(date)) return 805000
     return PROFIT_FIXED_PNL
   }
 
   if (phase === 'loss') {
-    if (isWeekdayIST(date)) {
-      if (isLossAnimating(date)) {
-        return getLossLivePnL(date, liveSeed)
-      }
-      return getLossLinearPnL(date)
-    }
+    if (isWeekdayIST(date)) return getLossLinearPnL(date)
     return MAX_LOSS
   }
 
   return PROFIT_FIXED_PNL
+}
+
+export function getPnLValue(date = getCurrentTime()) {
+  return getScheduledPnL(date)
 }
 
 export function formatPnL(value) {
@@ -173,21 +157,20 @@ export function formatPnL(value) {
   return value < 0 ? `-${formatted}` : formatted
 }
 
-export function getPositionState(date = getCurrentTime(), liveSeed = Date.now()) {
+export function getPositionState(date = getCurrentTime()) {
   const manualExit = getManualExit()
   const phase = getPositionPhase(date)
-  const pnl = getPnLValue(date, liveSeed)
+  const pnl = getScheduledPnL(date)
   const isRunning = !manualExit && phase !== 'closed'
-  const isLive =
-    isRunning &&
-    (isProfitShuffling(date) || isTuesdayShuffleSession(date) || isLossAnimating(date))
+  const marketLive = isRunning && isLiveSession(date)
   const ist = getISTClock(date)
 
   return {
     pnl,
     phase,
     isRunning,
-    isLive,
+    isLive: marketLive,
+    marketLive,
     isProfit: pnl >= 0,
     formattedPnL: formatPnL(pnl),
     sectionTitle: isRunning ? 'Open Positions' : 'Closed Positions',

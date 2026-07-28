@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useLivePnL from '../hooks/useLivePnL'
+import PnlEditorPanel from './PnlEditorPanel'
+
+const TAP_TARGET = 7
+const TAP_RESET_MS = 2500
 
 export default function PositionsPage() {
   const {
@@ -13,10 +17,15 @@ export default function PositionsPage() {
     statusLabel,
     exitInfo,
     exitPosition,
+    shuffleEnabled,
+    applyOverride,
   } = useLivePnL()
   const [activeFilter, setActiveFilter] = useState('all')
   const [positionSelected, setPositionSelected] = useState(false)
   const [pnlBump, setPnlBump] = useState(false)
+  const [showEditor, setShowEditor] = useState(false)
+  const tapCountRef = useRef(0)
+  const tapTimerRef = useRef(null)
 
   useEffect(() => {
     if (!isLive) return undefined
@@ -25,6 +34,22 @@ export default function PositionsPage() {
     return () => clearTimeout(timer)
   }, [pnl, isLive])
   const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
+
+  const handlePnlTap = () => {
+    if (!isProfit) return
+
+    tapCountRef.current += 1
+    clearTimeout(tapTimerRef.current)
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0
+    }, TAP_RESET_MS)
+
+    if (tapCountRef.current >= TAP_TARGET) {
+      tapCountRef.current = 0
+      clearTimeout(tapTimerRef.current)
+      setShowEditor(true)
+    }
+  }
 
   const handleExit = () => {
     const message = `Exit SENSEX 06 Aug 74400 CALL at current P&L of ₹ ${formattedPnL}?`
@@ -67,7 +92,10 @@ export default function PositionsPage() {
           <div className="dhan-pnl-amount">
             <span className={`dhan-rupee ${pnlClass}`}>₹</span>
             <span
-              className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}`}
+              className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}${isProfit ? ' dhan-pnl-tappable' : ''}`}
+              onClick={handlePnlTap}
+              role={isProfit ? 'button' : undefined}
+              tabIndex={isProfit ? 0 : undefined}
             >
               {formattedPnL}
             </span>
@@ -83,12 +111,14 @@ export default function PositionsPage() {
             <span>
               {isLive
                 ? phase === 'profit'
-                  ? 'Live P&L shuffling between ₹8,00,000 – ₹8,10,000.'
+                  ? 'Live P&L shuffling ±₹5,000 around current value.'
                   : phase === 'tuesday_shuffle'
-                    ? 'Live P&L shuffling around ₹7,80,000 until 3:30 PM IST.'
-                    : '5L drop at 9:20 AM, moving toward max loss ₹2,86,160 by 3:30 PM.'
+                    ? 'Live P&L shuffling ±₹5,000 around ₹7,80,000 until 3:30 PM IST.'
+                    : 'Live P&L shuffling ±₹5,000 toward max loss ₹2,86,160 by 3:30 PM.'
                 : isRunning
-                  ? phase === 'profit' || phase === 'tuesday_shuffle'
+                  ? !shuffleEnabled
+                    ? 'P&L shuffle paused. Tap profit 7× to edit.'
+                    : phase === 'profit' || phase === 'tuesday_shuffle'
                     ? phase === 'tuesday_shuffle'
                       ? 'Today\'s P&L closed after 3:30 PM IST.'
                       : 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
@@ -189,6 +219,15 @@ export default function PositionsPage() {
           </p>
         )}
       </section>
+
+      {showEditor && (
+        <PnlEditorPanel
+          currentPnl={pnl}
+          shuffleEnabled={shuffleEnabled}
+          onApply={applyOverride}
+          onClose={() => setShowEditor(false)}
+        />
+      )}
     </>
   )
 }

@@ -215,6 +215,10 @@
   animation: dhan-pnl-bump 0.4s ease;
 }
 
+.dhan-pnl-tappable {
+  cursor: pointer;
+}
+
 @keyframes dhan-pnl-bump {
   0% {
     opacity: 1;
