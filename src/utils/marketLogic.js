@@ -5,15 +5,17 @@ const TUESDAY_START_MS = Date.parse('2026-07-28T09:20:00+05:30')
 const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const MAX_LOSS = -286160
 
+const TUESDAY_SHUFFLE_DATE = '2026-07-28'
+const TUESDAY_SHUFFLE_START = 9 * 60
 const PROFIT_SHUFFLE_END = 15 * 60 + 29
 const PROFIT_FIXED_PNL = 837000
-const LOSS_OPEN_DROP = 500000
-const LOSS_OPEN_PNL = PROFIT_FIXED_PNL - LOSS_OPEN_DROP
+const LOSS_OPEN_PNL = PROFIT_FIXED_PNL - 500000
 const LOSS_SESSION_START = 9 * 60 + 20
 const MARKET_CLOSE = 15 * 60 + 30
 
 export const RANGES = {
   profit: { min: 800000, max: 810000 },
+  tuesday: { min: 775000, max: 785000 },
 }
 
 function clampPnL(pnl) {
@@ -60,11 +62,21 @@ export function isMarketHours(date = getCurrentTime()) {
   return totalMinutes >= LOSS_SESSION_START && totalMinutes <= MARKET_CLOSE
 }
 
+export function isTuesdayShuffleSession(date = getCurrentTime()) {
+  const { dateKey, totalMinutes } = getISTClock(date)
+  return (
+    dateKey === TUESDAY_SHUFFLE_DATE &&
+    totalMinutes >= TUESDAY_SHUFFLE_START &&
+    totalMinutes <= MARKET_CLOSE
+  )
+}
+
 export function getPositionPhase(date = getCurrentTime()) {
   if (getManualExit()) return 'closed'
 
   const nowMs = date.getTime()
   if (nowMs >= AUTO_SELL_MS) return 'closed'
+  if (isTuesdayShuffleSession(date)) return 'tuesday_shuffle'
   if (nowMs >= TUESDAY_START_MS) return 'loss'
   return 'profit'
 }
@@ -122,6 +134,11 @@ export function getPnLValue(date = getCurrentTime(), liveSeed = Date.now()) {
   const phase = getPositionPhase(date)
   if (phase === 'closed') return MAX_LOSS
 
+  if (phase === 'tuesday_shuffle') {
+    const { min, max } = RANGES.tuesday
+    return oscillate(min, max, liveSeed / 350)
+  }
+
   if (phase === 'profit') {
     const { totalMinutes } = getISTClock(date)
     if (totalMinutes > PROFIT_SHUFFLE_END) {
@@ -161,7 +178,9 @@ export function getPositionState(date = getCurrentTime(), liveSeed = Date.now())
   const phase = getPositionPhase(date)
   const pnl = getPnLValue(date, liveSeed)
   const isRunning = !manualExit && phase !== 'closed'
-  const isLive = isRunning && (isProfitShuffling(date) || isLossAnimating(date))
+  const isLive =
+    isRunning &&
+    (isProfitShuffling(date) || isTuesdayShuffleSession(date) || isLossAnimating(date))
   const ist = getISTClock(date)
 
   return {

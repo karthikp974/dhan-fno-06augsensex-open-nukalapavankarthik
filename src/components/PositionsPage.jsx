@@ -92,10 +92,14 @@ export default function PositionsPage() {
               {isLive
                 ? phase === 'profit'
                   ? 'Live P&L shuffling between ₹8,00,000 – ₹8,10,000.'
-                  : '5L drop at 9:20 AM, moving toward max loss ₹2,86,160 by 3:30 PM.'
+                  : phase === 'tuesday_shuffle'
+                    ? 'Live P&L shuffling around ₹7,80,000 until 3:30 PM IST.'
+                    : '5L drop at 9:20 AM, moving toward max loss ₹2,86,160 by 3:30 PM.'
                 : isRunning
-                  ? phase === 'profit'
-                    ? 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
+                  ? phase === 'profit' || phase === 'tuesday_shuffle'
+                    ? phase === 'tuesday_shuffle'
+                      ? 'Today\'s P&L closed after 3:30 PM IST.'
+                      : 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
                     : 'Max loss capped at ₹2,86,160. Closed for today after 3:30 PM.'
                   : exitInfo
                     ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
