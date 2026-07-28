@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DhanApp from './components/DhanApp'
 import PinGate from './components/PinGate'
+import { clearManualExit } from './utils/positionExit'
 import { isAllowedEntryPath, normalizeEntryUrl } from './config/appUrl'
 
 export default function App() {
@@ -8,6 +9,8 @@ export default function App() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    clearManualExit()
+
     const { pathname } = window.location
 
     if (!isAllowedEntryPath(pathname)) {

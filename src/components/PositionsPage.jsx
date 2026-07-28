@@ -15,13 +15,10 @@ export default function PositionsPage() {
     phase,
     sectionTitle,
     statusLabel,
-    exitInfo,
-    exitPosition,
     shuffleEnabled,
     applyOverride,
   } = useLivePnL()
   const [activeFilter, setActiveFilter] = useState('all')
-  const [positionSelected, setPositionSelected] = useState(false)
   const [pnlBump, setPnlBump] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
   const tapCountRef = useRef(0)
@@ -33,6 +30,7 @@ export default function PositionsPage() {
     const timer = setTimeout(() => setPnlBump(false), 400)
     return () => clearTimeout(timer)
   }, [pnl, isLive])
+
   const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
 
   const handlePnlTap = () => {
@@ -51,24 +49,32 @@ export default function PositionsPage() {
     }
   }
 
-  const handleExit = () => {
-    const message = `Exit SENSEX 06 Aug 74400 CALL at current P&L of ₹ ${formattedPnL}?`
-    if (window.confirm(message)) {
-      exitPosition()
-      setPositionSelected(false)
-    }
-  }
-
-  const handlePositionTap = () => {
-    if (isRunning) {
-      setPositionSelected((prev) => !prev)
-    }
-  }
-
   const showPosition =
     activeFilter === 'all' ||
     (activeFilter === 'profit' && isProfit) ||
     (activeFilter === 'loss' && !isProfit)
+
+  const statusMessage = (() => {
+    if (isLive) {
+      if (phase === 'profit') return 'Live P&L shuffling ±₹5,000 around current value.'
+      if (phase === 'tuesday_shuffle') {
+        return 'Live P&L shuffling ±₹5,000, closing at ₹7,20,000 by 3:15 PM IST.'
+      }
+      if (phase === 'decline') {
+        return 'Live P&L shuffling ±₹5,000 from ₹1,27,839 toward max loss by 3:15 PM IST.'
+      }
+      return 'Live P&L shuffling ±₹5,000 around current value.'
+    }
+    if (isRunning) {
+      if (!shuffleEnabled) return 'P&L shuffle paused. Tap profit 7× to edit.'
+      if (phase === 'frozen') return 'Today\'s P&L closed at ₹7,20,000.00 after 3:15 PM IST.'
+      if (phase === 'decline_frozen') return 'P&L frozen for today after 3:15 PM IST.'
+      if (phase === 'profit') return 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
+      return 'P&L closed for today after 3:15 PM IST.'
+    }
+    return 'Position squared off on 06 Aug. Verified by Dhan.'
+  })()
+
   return (
     <>
       <div className={`dhan-pnl-card ${pnlClass}`}>
@@ -108,25 +114,7 @@ export default function PositionsPage() {
                 <path d="M8 12l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <span>
-              {isLive
-                ? phase === 'profit'
-                  ? 'Live P&L shuffling ±₹5,000 around current value.'
-                  : phase === 'tuesday_shuffle'
-                    ? 'Live P&L shuffling ±₹5,000 around ₹7,80,000 until 3:30 PM IST.'
-                    : 'Live P&L shuffling ±₹5,000 toward max loss ₹2,86,160 by 3:30 PM.'
-                : isRunning
-                  ? !shuffleEnabled
-                    ? 'P&L shuffle paused. Tap profit 7× to edit.'
-                    : phase === 'profit' || phase === 'tuesday_shuffle'
-                    ? phase === 'tuesday_shuffle'
-                      ? 'Today\'s P&L closed after 3:30 PM IST.'
-                      : 'Today\'s P&L closed at ₹8,37,000.00 after 3:29 PM IST.'
-                    : 'Max loss capped at ₹2,86,160. Closed for today after 3:30 PM.'
-                  : exitInfo
-                    ? `Position exited on ${exitInfo.date} at ${exitInfo.time}. Verified by Dhan.`
-                    : 'Position squared off on 06 Aug. Verified by Dhan.'}
-            </span>
+            <span>{statusMessage}</span>
           </div>
         </div>
       </div>
@@ -157,18 +145,7 @@ export default function PositionsPage() {
       <section className="dhan-positions">
         <h2 className="dhan-section-title">{sectionTitle}</h2>
         {showPosition ? (
-          <div
-            className={`dhan-position-card${positionSelected && isRunning ? ' selected' : ''}${isRunning ? ' tappable' : ''}`}
-            onClick={handlePositionTap}
-            role={isRunning ? 'button' : undefined}
-            tabIndex={isRunning ? 0 : undefined}
-            onKeyDown={(e) => {
-              if (isRunning && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault()
-                handlePositionTap()
-              }
-            }}
-          >
+          <div className="dhan-position-card">
             <div className="dhan-position-header">
               <span className="dhan-position-name">SENSEX 06 Aug 74400 CALL</span>
               <span
@@ -187,17 +164,6 @@ export default function PositionsPage() {
                 {statusLabel}
               </span>
             </div>
-            {isRunning && positionSelected && (
-              <button
-                className="dhan-exit-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleExit()
-                }}
-              >
-                Exit
-              </button>
-            )}
           </div>
         ) : (
           <p className="dhan-empty-filter">

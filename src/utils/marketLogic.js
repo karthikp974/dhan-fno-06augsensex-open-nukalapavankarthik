@@ -1,21 +1,26 @@
-import { getManualExit } from './positionExit'
 import { getCurrentTime } from './timeOverride'
 
 const TUESDAY_START_MS = Date.parse('2026-07-28T09:20:00+05:30')
 const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const MAX_LOSS = -286160
 
-const TUESDAY_SHUFFLE_DATE = '2026-07-28'
+const TUESDAY_DATE = '2026-07-28'
+const WEDNESDAY_DATE = '2026-07-29'
+const THURSDAY_START_DATE = '2026-07-30'
+const LAST_DECLINE_DATE = '2026-08-05'
+
 const TUESDAY_SHUFFLE_START = 9 * 60
+const SESSION_START = 9 * 60 + 20
+const MARKET_CLOSE = 15 * 60 + 15
+
 const PROFIT_SHUFFLE_END = 15 * 60 + 29
 const PROFIT_FIXED_PNL = 837000
-const LOSS_OPEN_PNL = PROFIT_FIXED_PNL - 500000
-const LOSS_SESSION_START = 9 * 60 + 20
-const MARKET_CLOSE = 15 * 60 + 30
+const TUESDAY_OPEN_PNL = 780000
+const TUESDAY_CLOSE_PNL = 720000
+const THURSDAY_OPEN_PNL = 127839
 
 export const RANGES = {
   profit: { min: 800000, max: 810000 },
-  tuesday: { min: 775000, max: 785000 },
 }
 
 function clampPnL(pnl) {
@@ -56,45 +61,77 @@ export function isWeekdayIST(date = getCurrentTime()) {
   return !['Sat', 'Sun'].includes(weekday)
 }
 
-export function isMarketHours(date = getCurrentTime()) {
-  if (!isWeekdayIST(date)) return false
+function isDeclineDay(dateKey) {
+  return dateKey >= THURSDAY_START_DATE && dateKey <= LAST_DECLINE_DATE
+}
+
+function getTuesdayShuffleAnchor(date) {
   const { totalMinutes } = getISTClock(date)
-  return totalMinutes >= LOSS_SESSION_START && totalMinutes <= MARKET_CLOSE
+  const progress =
+    (totalMinutes - TUESDAY_SHUFFLE_START) / (MARKET_CLOSE - TUESDAY_SHUFFLE_START)
+  return Math.round(TUESDAY_OPEN_PNL + (TUESDAY_CLOSE_PNL - TUESDAY_OPEN_PNL) * progress)
+}
+
+function getDeclineLinearPnL(date) {
+  const { totalMinutes } = getISTClock(date)
+
+  if (totalMinutes < SESSION_START) {
+    return THURSDAY_OPEN_PNL
+  }
+
+  if (totalMinutes <= MARKET_CLOSE) {
+    const progress = (totalMinutes - SESSION_START) / (MARKET_CLOSE - SESSION_START)
+    return Math.round(THURSDAY_OPEN_PNL + (MAX_LOSS - THURSDAY_OPEN_PNL) * progress)
+  }
+
+  return MAX_LOSS
 }
 
 export function isTuesdayShuffleSession(date = getCurrentTime()) {
   const { dateKey, totalMinutes } = getISTClock(date)
   return (
-    dateKey === TUESDAY_SHUFFLE_DATE &&
+    dateKey === TUESDAY_DATE &&
     totalMinutes >= TUESDAY_SHUFFLE_START &&
     totalMinutes <= MARKET_CLOSE
   )
 }
 
-export function getPositionPhase(date = getCurrentTime()) {
-  if (getManualExit()) return 'closed'
-
-  const nowMs = date.getTime()
-  if (nowMs >= AUTO_SELL_MS) return 'closed'
-  if (isTuesdayShuffleSession(date)) return 'tuesday_shuffle'
-  if (nowMs >= TUESDAY_START_MS) return 'loss'
-  return 'profit'
+export function isDeclineSession(date = getCurrentTime()) {
+  const { dateKey, totalMinutes } = getISTClock(date)
+  return (
+    isDeclineDay(dateKey) &&
+    isWeekdayIST(date) &&
+    totalMinutes >= SESSION_START &&
+    totalMinutes <= MARKET_CLOSE
+  )
 }
 
-function getLossLinearPnL(date) {
-  const { totalMinutes } = getISTClock(date)
+export function getPositionPhase(date = getCurrentTime()) {
+  const nowMs = date.getTime()
+  if (nowMs >= AUTO_SELL_MS) return 'closed'
 
-  if (totalMinutes < LOSS_SESSION_START) {
-    return MAX_LOSS
+  const { dateKey, totalMinutes } = getISTClock(date)
+
+  if (dateKey === TUESDAY_DATE) {
+    if (totalMinutes >= TUESDAY_SHUFFLE_START && totalMinutes <= MARKET_CLOSE) {
+      return 'tuesday_shuffle'
+    }
+    if (totalMinutes > MARKET_CLOSE) return 'frozen'
+    return 'profit'
   }
 
-  if (totalMinutes <= MARKET_CLOSE) {
-    const progress =
-      (totalMinutes - LOSS_SESSION_START) / (MARKET_CLOSE - LOSS_SESSION_START)
-    return Math.round(LOSS_OPEN_PNL + (MAX_LOSS - LOSS_OPEN_PNL) * progress)
+  if (dateKey === WEDNESDAY_DATE) return 'frozen'
+
+  if (isDeclineDay(dateKey) && isWeekdayIST(date)) {
+    if (totalMinutes >= SESSION_START && totalMinutes <= MARKET_CLOSE) {
+      return 'decline'
+    }
+    return 'decline_frozen'
   }
 
-  return MAX_LOSS
+  if (nowMs < TUESDAY_START_MS) return 'profit'
+
+  return 'frozen'
 }
 
 export function isProfitShuffling(date = getCurrentTime()) {
@@ -105,29 +142,32 @@ export function isProfitShuffling(date = getCurrentTime()) {
 }
 
 export function isLossAnimating(date = getCurrentTime()) {
-  if (!isWeekdayIST(date)) return false
-  if (getPositionPhase(date) !== 'loss') return false
-  const { totalMinutes } = getISTClock(date)
-  return totalMinutes >= LOSS_SESSION_START && totalMinutes <= MARKET_CLOSE
+  return isDeclineSession(date)
 }
 
 export function isLiveSession(date = getCurrentTime()) {
-  if (getManualExit()) return false
   if (getPositionPhase(date) === 'closed') return false
-  return (
-    isProfitShuffling(date) || isTuesdayShuffleSession(date) || isLossAnimating(date)
-  )
+  return isProfitShuffling(date) || isTuesdayShuffleSession(date) || isDeclineSession(date)
 }
 
-/** Deterministic P&L anchor (no live jitter). */
 export function getScheduledPnL(date = getCurrentTime()) {
-  const manualExit = getManualExit()
-  if (manualExit) return clampPnL(manualExit.pnl)
-
   const phase = getPositionPhase(date)
   if (phase === 'closed') return MAX_LOSS
 
-  if (phase === 'tuesday_shuffle') return 780000
+  if (phase === 'tuesday_shuffle') return getTuesdayShuffleAnchor(date)
+
+  if (phase === 'frozen') return TUESDAY_CLOSE_PNL
+
+  if (phase === 'decline') return getDeclineLinearPnL(date)
+
+  if (phase === 'decline_frozen') {
+    const { dateKey, totalMinutes } = getISTClock(date)
+    if (dateKey === THURSDAY_START_DATE && totalMinutes < SESSION_START) {
+      return TUESDAY_CLOSE_PNL
+    }
+    if (totalMinutes > MARKET_CLOSE) return getDeclineLinearPnL(date)
+    return THURSDAY_OPEN_PNL
+  }
 
   if (phase === 'profit') {
     const { totalMinutes } = getISTClock(date)
@@ -136,12 +176,7 @@ export function getScheduledPnL(date = getCurrentTime()) {
     return PROFIT_FIXED_PNL
   }
 
-  if (phase === 'loss') {
-    if (isWeekdayIST(date)) return getLossLinearPnL(date)
-    return MAX_LOSS
-  }
-
-  return PROFIT_FIXED_PNL
+  return TUESDAY_CLOSE_PNL
 }
 
 export function getPnLValue(date = getCurrentTime()) {
@@ -158,10 +193,9 @@ export function formatPnL(value) {
 }
 
 export function getPositionState(date = getCurrentTime()) {
-  const manualExit = getManualExit()
   const phase = getPositionPhase(date)
   const pnl = getScheduledPnL(date)
-  const isRunning = !manualExit && phase !== 'closed'
+  const isRunning = phase !== 'closed'
   const marketLive = isRunning && isLiveSession(date)
   const ist = getISTClock(date)
 
@@ -175,7 +209,7 @@ export function getPositionState(date = getCurrentTime()) {
     formattedPnL: formatPnL(pnl),
     sectionTitle: isRunning ? 'Open Positions' : 'Closed Positions',
     statusLabel: isRunning ? 'Running' : 'Closed',
-    exitInfo: manualExit,
+    exitInfo: null,
     istTime: ist.label,
   }
 }
