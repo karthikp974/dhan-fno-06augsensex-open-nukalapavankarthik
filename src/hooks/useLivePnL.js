@@ -22,34 +22,33 @@ function jitterPnL(current) {
   return clampPnL(current + delta)
 }
 
+function composeState(base, pnl, override) {
+  const shuffling = base.marketLive && override.shuffleEnabled
+  return {
+    ...base,
+    pnl,
+    isLive: shuffling,
+    isProfit: pnl >= 0,
+    formattedPnL: formatPnL(pnl),
+    shuffleEnabled: override.shuffleEnabled,
+    hasCustomValue: override.customValue !== null,
+  }
+}
+
 const LivePnLContext = createContext(null)
 
 function useLivePnLState() {
-  const [state, setState] = useState(() => initState())
   const displayRef = useRef(null)
   const phaseRef = useRef(getPositionState().phase)
 
-  function initState() {
+  const [state, setState] = useState(() => {
     const override = getPnlOverride()
     const base = getPositionState()
     const anchor =
       override.customValue !== null ? override.customValue : getScheduledPnL()
     displayRef.current = anchor
     return composeState(base, anchor, override)
-  }
-
-  function composeState(base, pnl, override) {
-    const shuffling = base.marketLive && override.shuffleEnabled
-    return {
-      ...base,
-      pnl,
-      isLive: shuffling,
-      isProfit: pnl >= 0,
-      formattedPnL: formatPnL(pnl),
-      shuffleEnabled: override.shuffleEnabled,
-      hasCustomValue: override.customValue !== null,
-    }
-  }
+  })
 
   function sync({ shuffleStep = false, resetDisplay = false } = {}) {
     const base = getPositionState()

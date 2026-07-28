@@ -10,9 +10,12 @@ export function getPnlOverride() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...DEFAULT }
     const parsed = JSON.parse(raw)
+    const customValue =
+      typeof parsed.customValue === 'number' && Number.isFinite(parsed.customValue)
+        ? parsed.customValue
+        : null
     return {
-      customValue:
-        typeof parsed.customValue === 'number' ? parsed.customValue : null,
+      customValue,
       shuffleEnabled:
         typeof parsed.shuffleEnabled === 'boolean' ? parsed.shuffleEnabled : true,
     }
