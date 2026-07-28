@@ -63,14 +63,6 @@ export default function PositionsPage() {
         <div className="dhan-pnl-content">
           <div className="dhan-pnl-top">
             <span className="dhan-pnl-label">Overall P&L</span>
-            <button className="dhan-share-btn" aria-label="Share">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
-                <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-                <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2" />
-                <path d="M8.7 13.7l6.6 3.6M15.3 6.7L8.7 10.3" stroke="currentColor" strokeWidth="2" />
-              </svg>
-            </button>
           </div>
           <div className="dhan-pnl-amount">
             <span className={`dhan-rupee ${pnlClass}`}>₹</span>

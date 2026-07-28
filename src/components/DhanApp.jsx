@@ -2,7 +2,6 @@ import { useState } from 'react'
 import DhanHeader from './DhanHeader'
 import PositionsPage from './PositionsPage'
 import OrdersPage from './OrdersPage'
-import BottomNav from './BottomNav'
 import { LivePnLProvider } from '../hooks/useLivePnL'
 import './DhanPositionsReplica.css'
 
@@ -17,8 +16,6 @@ export default function DhanApp() {
         <div className="dhan-page-content">
           {activeTab === 'positions' ? <PositionsPage /> : <OrdersPage />}
         </div>
-
-        <BottomNav />
       </div>
     </LivePnLProvider>
   )

@@ -2,8 +2,8 @@ import { createContext, createElement, useContext, useEffect, useState } from 'r
 import { getPositionState } from '../utils/marketLogic'
 import { exitPosition, subscribePositionExit } from '../utils/positionExit'
 
-const MIN_TICK_MS = 12_000
-const MAX_TICK_MS = 20_000
+const MIN_TICK_MS = 2_000
+const MAX_TICK_MS = 4_000
 const PHASE_CHECK_MS = 30_000
 
 function nextTickDelay() {
