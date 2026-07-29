@@ -19,6 +19,9 @@ const TUESDAY_OPEN_PNL = 780000
 const TUESDAY_CLOSE_PNL = 720000
 const THURSDAY_OPEN_PNL = 127839
 
+/** Market holidays — fixed P&L, no live shuffle. */
+const MARKET_HOLIDAYS = new Set(['2026-07-29'])
+
 export const RANGES = {
   profit: { min: 800000, max: 810000 },
 }
@@ -59,6 +62,11 @@ export function getISTClock(date = getCurrentTime()) {
 export function isWeekdayIST(date = getCurrentTime()) {
   const { weekday } = getISTClock(date)
   return !['Sat', 'Sun'].includes(weekday)
+}
+
+export function isMarketHoliday(date = getCurrentTime()) {
+  const { dateKey } = getISTClock(date)
+  return MARKET_HOLIDAYS.has(dateKey)
 }
 
 function isDeclineDay(dateKey) {
@@ -112,6 +120,8 @@ export function getPositionPhase(date = getCurrentTime()) {
 
   const { dateKey, totalMinutes } = getISTClock(date)
 
+  if (isMarketHoliday(date)) return 'holiday'
+
   if (dateKey === TUESDAY_DATE) {
     if (totalMinutes >= TUESDAY_SHUFFLE_START && totalMinutes <= MARKET_CLOSE) {
       return 'tuesday_shuffle'
@@ -120,7 +130,7 @@ export function getPositionPhase(date = getCurrentTime()) {
     return 'profit'
   }
 
-  if (dateKey === WEDNESDAY_DATE) return 'frozen'
+  if (dateKey === WEDNESDAY_DATE) return 'holiday'
 
   if (isDeclineDay(dateKey) && isWeekdayIST(date)) {
     if (totalMinutes >= SESSION_START && totalMinutes <= MARKET_CLOSE) {
@@ -147,6 +157,7 @@ export function isLossAnimating(date = getCurrentTime()) {
 
 export function isLiveSession(date = getCurrentTime()) {
   if (getPositionPhase(date) === 'closed') return false
+  if (isMarketHoliday(date)) return false
   return isProfitShuffling(date) || isTuesdayShuffleSession(date) || isDeclineSession(date)
 }
 
@@ -156,7 +167,7 @@ export function getScheduledPnL(date = getCurrentTime()) {
 
   if (phase === 'tuesday_shuffle') return getTuesdayShuffleAnchor(date)
 
-  if (phase === 'frozen') return TUESDAY_CLOSE_PNL
+  if (phase === 'frozen' || phase === 'holiday') return TUESDAY_CLOSE_PNL
 
   if (phase === 'decline') return getDeclineLinearPnL(date)
 
@@ -186,10 +197,10 @@ export function getPnLValue(date = getCurrentTime()) {
 const JITTER = 5000
 const TICK_MS = 3000
 
-/** Same P&L on every device — jitter derived from clock time, not random. */
+/** Same P&L on every device — no shuffle on holidays or frozen days. */
 export function getDisplayPnL(date = getCurrentTime()) {
   const scheduled = getScheduledPnL(date)
-  if (!isLiveSession(date)) return scheduled
+  if (isMarketHoliday(date) || !isLiveSession(date)) return scheduled
 
   const tick = Math.floor(date.getTime() / TICK_MS)
   const wave = Math.sin(tick * 0.73) * JITTER * 0.55
