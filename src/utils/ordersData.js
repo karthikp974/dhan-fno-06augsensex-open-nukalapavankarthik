@@ -1,6 +1,7 @@
-import { getPositionPhase } from './marketLogic'
+import { getExitInfo, getPositionPhase } from './marketLogic'
 import { getCurrentTime } from './timeOverride'
 function getSensexOrders(phase) {
+  const exitInfo = getExitInfo()
   const buys = [
     {
       id: 1,
@@ -31,19 +32,19 @@ function getSensexOrders(phase) {
   ]
 
   const sell =
-    phase === 'closed'
+    phase === 'closed' && exitInfo
       ? {
           id: 3,
           name: 'SENSEX 06 Aug 74400 CALL',
           side: 'S',
           type: 'Normal',
           qty: 1460,
-          price: 118.4,
+          price: exitInfo.sellPrice,
           exchange: 'BSE',
           status: 'Executed',
-          date: '06 Aug 2026',
-          time: '09:16 AM',
-          sortKey: new Date('2026-08-06T09:16:00+05:30').getTime(),
+          date: exitInfo.date,
+          time: exitInfo.time,
+          sortKey: exitInfo.sortKey,
         }
       : {
           id: 3,

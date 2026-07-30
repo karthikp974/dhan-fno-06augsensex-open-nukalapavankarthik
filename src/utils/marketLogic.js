@@ -3,6 +3,8 @@ import { getCurrentTime } from './timeOverride'
 const TUESDAY_START_MS = Date.parse('2026-07-28T09:20:00+05:30')
 const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const MAX_LOSS = -286160
+const TRADE_EXIT_MS = Date.parse('2026-07-30T11:30:00+05:30')
+const EXIT_PNL = 8248329.27
 
 const TUESDAY_DATE = '2026-07-28'
 const WEDNESDAY_DATE = '2026-07-29'
@@ -128,7 +130,7 @@ export function isDeclineSession(date = getCurrentTime()) {
 
 export function getPositionPhase(date = getCurrentTime()) {
   const nowMs = date.getTime()
-  if (nowMs >= AUTO_SELL_MS) return 'closed'
+  if (nowMs >= TRADE_EXIT_MS) return 'closed'
 
   const { dateKey, totalMinutes } = getISTClock(date)
 
@@ -174,7 +176,7 @@ export function isLiveSession(date = getCurrentTime()) {
 
 export function getScheduledPnL(date = getCurrentTime()) {
   const phase = getPositionPhase(date)
-  if (phase === 'closed') return MAX_LOSS
+  if (phase === 'closed') return EXIT_PNL
 
   if (phase === 'tuesday_shuffle') return getTuesdayShuffleAnchor(date)
 
@@ -219,12 +221,25 @@ export function formatPnL(value) {
   return value < 0 ? `-${formatted}` : formatted
 }
 
+export function getExitInfo(date = getCurrentTime()) {
+  if (getPositionPhase(date) !== 'closed') return null
+  return {
+    pnl: EXIT_PNL,
+    formattedPnL: formatPnL(EXIT_PNL),
+    date: '30 Jul 2026',
+    time: '11:30 AM',
+    sortKey: TRADE_EXIT_MS,
+    sellPrice: Math.round((196 + EXIT_PNL / 1460) * 100) / 100,
+  }
+}
+
 export function getPositionState(date = getCurrentTime()) {
   const phase = getPositionPhase(date)
   const pnl = getScheduledPnL(date)
   const isRunning = phase !== 'closed'
   const marketLive = isRunning && isLiveSession(date)
   const ist = getISTClock(date)
+  const exitInfo = getExitInfo(date)
 
   return {
     pnl,
@@ -236,7 +251,7 @@ export function getPositionState(date = getCurrentTime()) {
     formattedPnL: formatPnL(pnl),
     sectionTitle: isRunning ? 'Open Positions' : 'Closed Positions',
     statusLabel: isRunning ? 'Running' : 'Closed',
-    exitInfo: null,
+    exitInfo,
     istTime: ist.label,
   }
 }
