@@ -4,7 +4,8 @@ const TUESDAY_START_MS = Date.parse('2026-07-28T09:20:00+05:30')
 const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const MAX_LOSS = -286160
 const TRADE_EXIT_MS = Date.parse('2026-07-30T11:30:00+05:30')
-const EXIT_PNL = 804832.73
+export const ACCOUNT_FUNDS = 804832.73
+const EXIT_PNL = ACCOUNT_FUNDS
 
 const TUESDAY_DATE = '2026-07-28'
 const WEDNESDAY_DATE = '2026-07-29'
@@ -66,6 +67,13 @@ export function getISTClock(date = getCurrentTime()) {
     totalMinutes: hour * 60 + minute,
     label: `${parts.hour}:${String(minute).padStart(2, '0')} IST`,
   }
+}
+
+export function getISTGreeting(date = getCurrentTime()) {
+  const { hour } = getISTClock(date)
+  if (hour >= 5 && hour < 12) return 'GOOD MORNING'
+  if (hour >= 12 && hour < 17) return 'GOOD AFTERNOON'
+  return 'GOOD EVENING'
 }
 
 export function isWeekdayIST(date = getCurrentTime()) {

@@ -1,0 +1,86 @@
+.dhan-header-profile {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dhan-avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  line-height: 0;
+}
+
+.dhan-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.dhan-profile-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 100;
+  width: 240px;
+  background: #fff;
+  border: 1px solid var(--border-light, #e0e0e0);
+  border-radius: 12px;
+  padding: 18px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: dhan-profile-in 0.18s ease;
+}
+
+@keyframes dhan-profile-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dhan-profile-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--green-primary, #24946f);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.dhan-profile-greeting {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.dhan-profile-funds {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted, #888888);
+}
+
+.dhan-profile-funds-amount {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+}
