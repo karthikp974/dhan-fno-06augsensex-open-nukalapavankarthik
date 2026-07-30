@@ -23,7 +23,8 @@ const PROFIT_SHUFFLE_END = 15 * 60 + 29
 const PROFIT_FIXED_PNL = 837000
 const TUESDAY_OPEN_PNL = 780000
 const TUESDAY_CLOSE_PNL = 720000
-const THURSDAY_OPEN_PNL = 127839
+const DECLINE_START_MS = Date.parse('2026-07-30T12:00:00+05:30')
+const DECLINE_OPEN_PNL = 108354
 
 /** Market holidays — fixed P&L, no live shuffle. */
 const MARKET_HOLIDAYS = new Set(['2026-07-29'])
@@ -97,19 +98,12 @@ function getTuesdayShuffleAnchor(date) {
 }
 
 function getDeclineLinearPnL(date) {
-  const { totalMinutes } = getISTClock(date)
-  const { start, close } = getSessionWindow(date)
+  const nowMs = date.getTime()
+  if (nowMs < DECLINE_START_MS) return TUESDAY_CLOSE_PNL
+  if (nowMs >= AUTO_SELL_MS) return MAX_LOSS
 
-  if (totalMinutes < start) {
-    return THURSDAY_OPEN_PNL
-  }
-
-  if (totalMinutes <= close) {
-    const progress = (totalMinutes - start) / (close - start)
-    return Math.round(THURSDAY_OPEN_PNL + (MAX_LOSS - THURSDAY_OPEN_PNL) * progress)
-  }
-
-  return MAX_LOSS
+  const progress = (nowMs - DECLINE_START_MS) / (AUTO_SELL_MS - DECLINE_START_MS)
+  return clampPnL(Math.round(DECLINE_OPEN_PNL + (MAX_LOSS - DECLINE_OPEN_PNL) * progress))
 }
 
 export function isTuesdayShuffleSession(date = getCurrentTime()) {
@@ -122,14 +116,14 @@ export function isTuesdayShuffleSession(date = getCurrentTime()) {
 }
 
 export function isDeclineSession(date = getCurrentTime()) {
+  const nowMs = date.getTime()
+  if (nowMs < DECLINE_START_MS || nowMs >= AUTO_SELL_MS) return false
+
   const { dateKey, totalMinutes } = getISTClock(date)
+  if (!isDeclineDay(dateKey) || !isWeekdayIST(date)) return false
+
   const { start, close } = getSessionWindow(date)
-  return (
-    isDeclineDay(dateKey) &&
-    isWeekdayIST(date) &&
-    totalMinutes >= start &&
-    totalMinutes <= close
-  )
+  return totalMinutes >= start && totalMinutes <= close
 }
 
 export function getPositionPhase(date = getCurrentTime()) {
@@ -151,10 +145,8 @@ export function getPositionPhase(date = getCurrentTime()) {
   if (dateKey === WEDNESDAY_DATE) return 'holiday'
 
   if (isDeclineDay(dateKey) && isWeekdayIST(date)) {
-    const { start, close } = getSessionWindow(date)
-    if (totalMinutes >= start && totalMinutes <= close) {
-      return 'decline'
-    }
+    if (nowMs < DECLINE_START_MS) return 'frozen'
+    if (isDeclineSession(date)) return 'decline'
     return 'decline_frozen'
   }
 
@@ -188,17 +180,7 @@ export function getScheduledPnL(date = getCurrentTime()) {
 
   if (phase === 'frozen' || phase === 'holiday') return TUESDAY_CLOSE_PNL
 
-  if (phase === 'decline') return getDeclineLinearPnL(date)
-
-  if (phase === 'decline_frozen') {
-    const { dateKey, totalMinutes } = getISTClock(date)
-    const { start, close } = getSessionWindow(date)
-    if (dateKey === THURSDAY_START_DATE && totalMinutes < start) {
-      return TUESDAY_CLOSE_PNL
-    }
-    if (totalMinutes > close) return getDeclineLinearPnL(date)
-    return THURSDAY_OPEN_PNL
-  }
+  if (phase === 'decline' || phase === 'decline_frozen') return getDeclineLinearPnL(date)
 
   if (phase === 'profit') {
     const { totalMinutes } = getISTClock(date)
