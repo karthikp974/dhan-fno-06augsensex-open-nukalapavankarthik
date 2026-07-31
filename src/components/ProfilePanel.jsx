@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ACCOUNT_FUNDS, formatPnL, getISTGreeting } from '../utils/marketLogic'
 import './ProfilePanel.css'
 
-export default function ProfilePanel({ onClose }) {
+export default function ProfilePanel({ onClose, onWithdraw }) {
   const [greeting, setGreeting] = useState(() => getISTGreeting())
 
   useEffect(() => {
@@ -23,6 +23,9 @@ export default function ProfilePanel({ onClose }) {
         <p className="dhan-profile-funds">
           Funds in your account <span className="dhan-profile-funds-amount">{funds}</span>
         </p>
+        <button type="button" className="dhan-profile-withdraw-btn" onClick={onWithdraw}>
+          Withdraw Funds
+        </button>
       </div>
     </>
   )

@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import ProfilePanel from './ProfilePanel'
 
-export default function DhanHeader({ activeTab, onTabChange }) {
+export default function DhanHeader({ activeTab, onTabChange, onWithdraw }) {
   const [showProfile, setShowProfile] = useState(false)
+
+  const handleWithdraw = () => {
+    setShowProfile(false)
+    onWithdraw?.()
+  }
 
   return (
     <header className="dhan-header">
@@ -16,7 +21,9 @@ export default function DhanHeader({ activeTab, onTabChange }) {
         >
           <div className="dhan-avatar">NP</div>
         </button>
-        {showProfile && <ProfilePanel onClose={() => setShowProfile(false)} />}
+        {showProfile && (
+          <ProfilePanel onClose={() => setShowProfile(false)} onWithdraw={handleWithdraw} />
+        )}
       </div>
       <nav className="dhan-tabs">
         <button

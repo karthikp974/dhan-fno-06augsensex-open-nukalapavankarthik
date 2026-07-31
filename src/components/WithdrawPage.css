@@ -1,0 +1,394 @@
+.dhan-withdraw {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-page, #f0f0f0);
+}
+
+.dhan-withdraw-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 12px;
+  background: var(--bg-page, #f0f0f0);
+  flex-shrink: 0;
+}
+
+.dhan-withdraw-back {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-dark, #2c2c2c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dhan-withdraw-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+  margin: 0;
+}
+
+.dhan-withdraw-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 100px;
+}
+
+.dhan-withdraw-balance-card {
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dhan-withdraw-balance-label {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  margin-bottom: 4px;
+}
+
+.dhan-withdraw-balance-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.dhan-withdraw-balance-value .dhan-withdraw-rupee {
+  font-size: 18px;
+  margin-right: 2px;
+}
+
+.dhan-withdraw-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+  margin-bottom: 8px;
+}
+
+.dhan-withdraw-amount-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card, #fff);
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.dhan-withdraw-amount-wrap:focus-within {
+  border-color: var(--green-primary, #24946f);
+}
+
+.dhan-withdraw-amount-wrap.dhan-withdraw-input-error {
+  border-color: #e53935;
+}
+
+.dhan-withdraw-amount-symbol {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-muted, #888);
+  margin-right: 8px;
+}
+
+.dhan-withdraw-amount-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+  background: transparent;
+  min-width: 0;
+}
+
+.dhan-withdraw-amount-input::placeholder {
+  color: var(--text-light, #aaa);
+  font-weight: 400;
+}
+
+.dhan-withdraw-quick {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.dhan-withdraw-quick-btn {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  background: var(--bg-card, #fff);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green-primary, #24946f);
+  cursor: pointer;
+}
+
+.dhan-withdraw-error {
+  font-size: 12px;
+  color: #e53935;
+  margin: 0 0 12px;
+}
+
+.dhan-withdraw-info {
+  background: #eef7f3;
+  border: 1px solid #c5e6d8;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.dhan-withdraw-info-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-primary, #24946f);
+  margin: 0 0 6px;
+}
+
+.dhan-withdraw-info-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dark, #2c2c2c);
+  margin: 0;
+}
+
+.dhan-withdraw-summary {
+  background: var(--bg-card, #fff);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dhan-withdraw-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 6px 0;
+}
+
+.dhan-withdraw-summary-row + .dhan-withdraw-summary-row {
+  border-top: 1px solid var(--border-light, #e0e0e0);
+}
+
+.dhan-withdraw-summary-label {
+  color: var(--text-muted, #888);
+}
+
+.dhan-withdraw-summary-value {
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+  text-align: right;
+}
+
+.dhan-withdraw-slots-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+  margin: 0 0 12px;
+}
+
+.dhan-withdraw-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dhan-withdraw-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-card, #fff);
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dhan-withdraw-slot:not(:disabled):hover {
+  border-color: var(--green-primary, #24946f);
+}
+
+.dhan-withdraw-slot.selected {
+  border-color: var(--green-primary, #24946f);
+  box-shadow: 0 2px 8px rgba(36, 148, 111, 0.15);
+}
+
+.dhan-withdraw-slot:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dhan-withdraw-slot-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.dhan-withdraw-slot-meta {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  margin-top: 2px;
+}
+
+.dhan-withdraw-slot-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-light, #e0e0e0);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dhan-withdraw-slot.selected .dhan-withdraw-slot-radio {
+  border-color: var(--green-primary, #24946f);
+}
+
+.dhan-withdraw-slot.selected .dhan-withdraw-slot-radio::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green-primary, #24946f);
+}
+
+.dhan-withdraw-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted, #888);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dhan-withdraw-bank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dhan-withdraw-bank {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card, #fff);
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+
+.dhan-withdraw-bank.selected {
+  border-color: var(--green-primary, #24946f);
+  box-shadow: 0 2px 8px rgba(36, 148, 111, 0.15);
+}
+
+.dhan-withdraw-bank-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #3949ab;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dhan-withdraw-bank-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.dhan-withdraw-bank-ac {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  margin-top: 2px;
+}
+
+.dhan-withdraw-success {
+  text-align: center;
+  padding: 40px 16px 24px;
+}
+
+.dhan-withdraw-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-light, #e8f5e0);
+  color: var(--green-primary, #24946f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.dhan-withdraw-success-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+  margin: 0 0 8px;
+}
+
+.dhan-withdraw-success-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted, #888);
+  margin: 0 0 20px;
+}
+
+.dhan-withdraw-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px 20px;
+  background: linear-gradient(to top, var(--bg-page, #f0f0f0) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.dhan-withdraw-cta {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--green-primary, #24946f);
+  color: #fff;
+}
+
+.dhan-withdraw-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dhan-withdraw-cta-secondary {
+  background: var(--bg-card, #fff);
+  color: var(--text-dark, #2c2c2c);
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  margin-top: 10px;
+}

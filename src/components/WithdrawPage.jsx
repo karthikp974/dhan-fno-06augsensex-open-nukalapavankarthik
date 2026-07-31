@@ -1,0 +1,313 @@
+import { useEffect, useMemo, useState } from 'react'
+import { ACCOUNT_FUNDS, formatPnL } from '../utils/marketLogic'
+import {
+  getWithdrawSlots,
+  hasAvailableWithdrawSlots,
+  WITHDRAW_SLOT_NOTE,
+} from '../utils/withdrawSlots'
+import './WithdrawPage.css'
+
+const BANKS = [
+  { id: 'hdfc', name: 'HDFC Bank', account: 'XXXX XXXX 4521', icon: 'HDFC' },
+]
+
+function parseAmount(raw) {
+  const cleaned = String(raw).replace(/,/g, '').trim()
+  if (!cleaned) return null
+  const value = Number(cleaned)
+  return Number.isFinite(value) ? value : null
+}
+
+export default function WithdrawPage({ onBack }) {
+  const [step, setStep] = useState('amount')
+  const [amountRaw, setAmountRaw] = useState('')
+  const [selectedSlotId, setSelectedSlotId] = useState(null)
+  const [selectedBankId, setSelectedBankId] = useState(BANKS[0].id)
+  const [slots, setSlots] = useState(() => getWithdrawSlots())
+
+  useEffect(() => {
+    const sync = () => setSlots(getWithdrawSlots())
+    sync()
+    const timer = setInterval(sync, 30_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const amount = parseAmount(amountRaw)
+  const availableFormatted = formatPnL(ACCOUNT_FUNDS)
+  const amountError = useMemo(() => {
+    if (amount === null) return amountRaw.trim() ? 'Enter a valid amount' : null
+    if (amount <= 0) return 'Amount must be greater than zero'
+    if (amount > ACCOUNT_FUNDS) return 'Amount exceeds available balance'
+    return null
+  }, [amount, amountRaw])
+
+  const selectedSlot = slots.find((slot) => slot.id === selectedSlotId)
+  const availableSlots = slots.filter((slot) => slot.available)
+  const canProceedAmount = amount !== null && !amountError
+  const canProceedSlot = Boolean(selectedSlot)
+  const canConfirm = Boolean(selectedBankId)
+
+  const handleAmountChange = (event) => {
+    const next = event.target.value.replace(/[^\d.]/g, '')
+    setAmountRaw(next)
+  }
+
+  const setQuickAmount = (value) => {
+    setAmountRaw(String(value))
+  }
+
+  const goToSlots = () => {
+    if (!canProceedAmount) return
+    if (!hasAvailableWithdrawSlots()) return
+    setStep('slot')
+  }
+
+  const goToBank = () => {
+    if (!canProceedSlot) return
+    setStep('bank')
+  }
+
+  const confirmWithdrawal = () => {
+    if (!canConfirm) return
+    setStep('success')
+  }
+
+  const handleBack = () => {
+    if (step === 'slot') setStep('amount')
+    else if (step === 'bank') setStep('slot')
+    else if (step === 'success') onBack()
+    else onBack()
+  }
+
+  const renderAmountStep = () => (
+    <>
+      <div className="dhan-withdraw-balance-card">
+        <div className="dhan-withdraw-balance-label">Available to withdraw</div>
+        <div className="dhan-withdraw-balance-value">
+          <span className="dhan-withdraw-rupee">₹</span>
+          {availableFormatted}
+        </div>
+      </div>
+
+      <div className="dhan-withdraw-field-label">Enter amount to withdraw</div>
+      <div
+        className={`dhan-withdraw-amount-wrap${amountError ? ' dhan-withdraw-input-error' : ''}`}
+      >
+        <span className="dhan-withdraw-amount-symbol">₹</span>
+        <input
+          className="dhan-withdraw-amount-input"
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={amountRaw}
+          onChange={handleAmountChange}
+        />
+      </div>
+
+      <div className="dhan-withdraw-quick">
+        <button type="button" className="dhan-withdraw-quick-btn" onClick={() => setQuickAmount(ACCOUNT_FUNDS)}>
+          Full amount
+        </button>
+        <button type="button" className="dhan-withdraw-quick-btn" onClick={() => setQuickAmount(500000)}>
+          ₹5,00,000
+        </button>
+        <button type="button" className="dhan-withdraw-quick-btn" onClick={() => setQuickAmount(200000)}>
+          ₹2,00,000
+        </button>
+      </div>
+
+      {amountError && <p className="dhan-withdraw-error">{amountError}</p>}
+
+      {!hasAvailableWithdrawSlots() && (
+        <p className="dhan-withdraw-error">
+          Withdrawal slots are closed for today (after 3:30 PM IST). Please try again tomorrow.
+        </p>
+      )}
+    </>
+  )
+
+  const renderSlotStep = () => (
+    <>
+      <div className="dhan-withdraw-summary">
+        <div className="dhan-withdraw-summary-row">
+          <span className="dhan-withdraw-summary-label">Withdrawal amount</span>
+          <span className="dhan-withdraw-summary-value">₹{formatPnL(amount)}</span>
+        </div>
+      </div>
+
+      <div className="dhan-withdraw-info">
+        <p className="dhan-withdraw-info-title">Why this slot?</p>
+        <p className="dhan-withdraw-info-text">{WITHDRAW_SLOT_NOTE}</p>
+      </div>
+
+      <h2 className="dhan-withdraw-slots-title">Select a slot</h2>
+
+      {availableSlots.length === 0 ? (
+        <p className="dhan-withdraw-empty">
+          No slots available right now. All 30-minute slots for today (till 3:30 PM IST) are full or
+          closed.
+        </p>
+      ) : (
+        <div className="dhan-withdraw-slot-list">
+          {slots.map((slot) => (
+            <button
+              key={slot.id}
+              type="button"
+              className={`dhan-withdraw-slot${selectedSlotId === slot.id ? ' selected' : ''}`}
+              disabled={!slot.available}
+              onClick={() => setSelectedSlotId(slot.id)}
+            >
+              <div>
+                <div className="dhan-withdraw-slot-time">{slot.label}</div>
+                <div className="dhan-withdraw-slot-meta">
+                  {slot.isCurrent
+                    ? 'Current slot'
+                    : slot.available
+                      ? 'Available'
+                      : 'Slot closed'}
+                </div>
+              </div>
+              <span className="dhan-withdraw-slot-radio" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  )
+
+  const renderBankStep = () => (
+    <>
+      <div className="dhan-withdraw-summary">
+        <div className="dhan-withdraw-summary-row">
+          <span className="dhan-withdraw-summary-label">Amount</span>
+          <span className="dhan-withdraw-summary-value">₹{formatPnL(amount)}</span>
+        </div>
+        <div className="dhan-withdraw-summary-row">
+          <span className="dhan-withdraw-summary-label">Payout slot</span>
+          <span className="dhan-withdraw-summary-value">{selectedSlot?.label}</span>
+        </div>
+      </div>
+
+      <h2 className="dhan-withdraw-slots-title">Select bank account</h2>
+      <div className="dhan-withdraw-bank-list">
+        {BANKS.map((bank) => (
+          <button
+            key={bank.id}
+            type="button"
+            className={`dhan-withdraw-bank${selectedBankId === bank.id ? ' selected' : ''}`}
+            onClick={() => setSelectedBankId(bank.id)}
+          >
+            <div className="dhan-withdraw-bank-icon">{bank.icon}</div>
+            <div>
+              <div className="dhan-withdraw-bank-name">{bank.name}</div>
+              <div className="dhan-withdraw-bank-ac">{bank.account}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="dhan-withdraw-info" style={{ marginTop: 16 }}>
+        <p className="dhan-withdraw-info-text" style={{ margin: 0 }}>
+          Funds will be credited to your selected bank account within the chosen 30-minute slot on a
+          best-effort basis.
+        </p>
+      </div>
+    </>
+  )
+
+  const renderSuccessStep = () => (
+    <div className="dhan-withdraw-success">
+      <div className="dhan-withdraw-success-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M5 12l5 5L19 7"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <h2 className="dhan-withdraw-success-title">Withdrawal request placed</h2>
+      <p className="dhan-withdraw-success-text">
+        ₹{formatPnL(amount)} will be transferred to your {BANKS.find((b) => b.id === selectedBankId)?.name}{' '}
+        account during the {selectedSlot?.label} slot.
+      </p>
+    </div>
+  )
+
+  const titles = {
+    amount: 'Withdraw to Bank',
+    slot: 'Select Slot',
+    bank: 'Confirm Withdrawal',
+    success: 'Withdraw to Bank',
+  }
+
+  const footer = (() => {
+    if (step === 'amount') {
+      return (
+        <button
+          type="button"
+          className="dhan-withdraw-cta"
+          disabled={!canProceedAmount || !hasAvailableWithdrawSlots()}
+          onClick={goToSlots}
+        >
+          Proceed to Next
+        </button>
+      )
+    }
+    if (step === 'slot') {
+      return (
+        <button
+          type="button"
+          className="dhan-withdraw-cta"
+          disabled={!canProceedSlot}
+          onClick={goToBank}
+        >
+          Proceed to Next
+        </button>
+      )
+    }
+    if (step === 'bank') {
+      return (
+        <button type="button" className="dhan-withdraw-cta" disabled={!canConfirm} onClick={confirmWithdrawal}>
+          Confirm Withdrawal Request
+        </button>
+      )
+    }
+    return (
+      <button type="button" className="dhan-withdraw-cta" onClick={onBack}>
+        Done
+      </button>
+    )
+  })()
+
+  return (
+    <div className="dhan-withdraw">
+      <div className="dhan-withdraw-top">
+        <button type="button" className="dhan-withdraw-back" aria-label="Go back" onClick={handleBack}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <h1 className="dhan-withdraw-title">{titles[step]}</h1>
+      </div>
+
+      <div className="dhan-withdraw-body">
+        {step === 'amount' && renderAmountStep()}
+        {step === 'slot' && renderSlotStep()}
+        {step === 'bank' && renderBankStep()}
+        {step === 'success' && renderSuccessStep()}
+      </div>
+
+      {step !== 'success' && <div className="dhan-withdraw-footer">{footer}</div>}
+      {step === 'success' && <div className="dhan-withdraw-footer">{footer}</div>}
+    </div>
+  )
+}

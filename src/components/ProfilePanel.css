@@ -84,3 +84,21 @@
   font-weight: 700;
   color: var(--text-dark, #2c2c2c);
 }
+
+.dhan-profile-withdraw-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--green-primary, #24946f);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dhan-profile-withdraw-btn:active {
+  opacity: 0.9;
+}
