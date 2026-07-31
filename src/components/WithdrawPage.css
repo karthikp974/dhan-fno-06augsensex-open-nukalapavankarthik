@@ -392,3 +392,90 @@
   border: 1.5px solid var(--border-light, #e0e0e0);
   margin-top: 10px;
 }
+
+.dhan-withdraw-verify-block {
+  margin-bottom: 20px;
+}
+
+.dhan-withdraw-face {
+  background: var(--bg-card, #fff);
+  border: 1.5px dashed var(--border-light, #e0e0e0);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.dhan-withdraw-face.verified {
+  border-style: solid;
+  border-color: var(--green-primary, #24946f);
+  background: #eef7f3;
+}
+
+.dhan-withdraw-face-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--bg-page, #f0f0f0);
+  color: var(--text-muted, #888);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.dhan-withdraw-face.verified .dhan-withdraw-face-icon {
+  background: var(--green-light, #e8f5e0);
+  color: var(--green-primary, #24946f);
+}
+
+.dhan-withdraw-face-label {
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  margin: 0 0 14px;
+}
+
+.dhan-withdraw-face.verified .dhan-withdraw-face-label {
+  color: var(--green-primary, #24946f);
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.dhan-withdraw-face-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: var(--green-primary, #24946f);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dhan-withdraw-question {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dhan-withdraw-question-label {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+}
+
+.dhan-withdraw-question-input {
+  border: 1.5px solid var(--border-light, #e0e0e0);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+  background: var(--bg-card, #fff);
+}
+
+.dhan-withdraw-question-input:focus {
+  outline: none;
+  border-color: var(--green-primary, #24946f);
+}

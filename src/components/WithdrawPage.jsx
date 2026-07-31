@@ -3,6 +3,8 @@ import { ACCOUNT_FUNDS, formatPnL } from '../utils/marketLogic'
 import {
   getWithdrawSlots,
   hasAvailableWithdrawSlots,
+  requiresHighValueVerification,
+  VERIFICATION_SLOT_ID,
   WITHDRAW_SLOT_NOTE,
 } from '../utils/withdrawSlots'
 import './WithdrawPage.css'
@@ -18,11 +20,26 @@ function parseAmount(raw) {
   return Number.isFinite(value) ? value : null
 }
 
+const SECURITY_QUESTIONS = [
+  {
+    id: 'mobile',
+    label: 'Last 4 digits of registered mobile number',
+    placeholder: 'Enter last 4 digits',
+  },
+  {
+    id: 'pan',
+    label: 'Last 4 characters of PAN',
+    placeholder: 'e.g. 1234',
+  },
+]
+
 export default function WithdrawPage({ onBack }) {
   const [step, setStep] = useState('amount')
   const [amountRaw, setAmountRaw] = useState('')
   const [selectedSlotId, setSelectedSlotId] = useState(null)
   const [selectedBankId, setSelectedBankId] = useState(BANKS[0].id)
+  const [faceVerified, setFaceVerified] = useState(false)
+  const [answers, setAnswers] = useState({ mobile: '', pan: '' })
   const [slots, setSlots] = useState(() => getWithdrawSlots())
 
   useEffect(() => {
@@ -43,8 +60,11 @@ export default function WithdrawPage({ onBack }) {
 
   const selectedSlot = slots.find((slot) => slot.id === selectedSlotId)
   const availableSlots = slots.filter((slot) => slot.available)
+  const needsVerification = requiresHighValueVerification(amount)
   const canProceedAmount = amount !== null && !amountError
   const canProceedSlot = Boolean(selectedSlot)
+  const canProceedVerify =
+    faceVerified && answers.mobile.trim().length === 4 && answers.pan.trim().length === 4
   const canConfirm = Boolean(selectedBankId)
 
   const handleAmountChange = (event) => {
@@ -59,11 +79,18 @@ export default function WithdrawPage({ onBack }) {
   const goToSlots = () => {
     if (!canProceedAmount) return
     if (!hasAvailableWithdrawSlots()) return
+    setSelectedSlotId(VERIFICATION_SLOT_ID)
     setStep('slot')
   }
 
-  const goToBank = () => {
+  const goAfterSlot = () => {
     if (!canProceedSlot) return
+    if (needsVerification) setStep('verify')
+    else setStep('bank')
+  }
+
+  const goToBank = () => {
+    if (needsVerification && !canProceedVerify) return
     setStep('bank')
   }
 
@@ -74,7 +101,8 @@ export default function WithdrawPage({ onBack }) {
 
   const handleBack = () => {
     if (step === 'slot') setStep('amount')
-    else if (step === 'bank') setStep('slot')
+    else if (step === 'verify') setStep('slot')
+    else if (step === 'bank') setStep(needsVerification ? 'verify' : 'slot')
     else if (step === 'success') onBack()
     else onBack()
   }
@@ -160,11 +188,13 @@ export default function WithdrawPage({ onBack }) {
               <div>
                 <div className="dhan-withdraw-slot-time">{slot.label}</div>
                 <div className="dhan-withdraw-slot-meta">
-                  {slot.isCurrent
-                    ? 'Current slot'
-                    : slot.available
-                      ? 'Available'
-                      : 'Slot closed'}
+                  {slot.verificationSlot && slot.available
+                    ? 'Available · Face verification required'
+                    : slot.isCurrent
+                      ? 'Current slot'
+                      : slot.available
+                        ? 'Available'
+                        : 'Slot closed'}
                 </div>
               </div>
               <span className="dhan-withdraw-slot-radio" aria-hidden="true" />
@@ -172,6 +202,88 @@ export default function WithdrawPage({ onBack }) {
           ))}
         </div>
       )}
+    </>
+  )
+
+  const renderVerifyStep = () => (
+    <>
+      <div className="dhan-withdraw-summary">
+        <div className="dhan-withdraw-summary-row">
+          <span className="dhan-withdraw-summary-label">Withdrawal amount</span>
+          <span className="dhan-withdraw-summary-value">₹{formatPnL(amount)}</span>
+        </div>
+        <div className="dhan-withdraw-summary-row">
+          <span className="dhan-withdraw-summary-label">Verification slot</span>
+          <span className="dhan-withdraw-summary-value">{selectedSlot?.label}</span>
+        </div>
+      </div>
+
+      <div className="dhan-withdraw-info">
+        <p className="dhan-withdraw-info-title">High-value withdrawal</p>
+        <p className="dhan-withdraw-info-text">
+          Amounts above ₹8 lakh need facial recognition and security questions before payout. Complete
+          both steps below during your 3:00 PM – 3:30 PM slot.
+        </p>
+      </div>
+
+      <div className="dhan-withdraw-verify-block">
+        <h2 className="dhan-withdraw-slots-title">Facial recognition</h2>
+        <div className={`dhan-withdraw-face${faceVerified ? ' verified' : ''}`}>
+          <div className="dhan-withdraw-face-icon" aria-hidden="true">
+            {faceVerified ? (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12l5 5L19 7"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="10" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <path
+                  d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </div>
+          <p className="dhan-withdraw-face-label">
+            {faceVerified ? 'Face verified successfully' : 'Position your face in the frame'}
+          </p>
+          {!faceVerified && (
+            <button type="button" className="dhan-withdraw-face-btn" onClick={() => setFaceVerified(true)}>
+              Start Face Verification
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="dhan-withdraw-verify-block">
+        <h2 className="dhan-withdraw-slots-title">Security questions</h2>
+        {SECURITY_QUESTIONS.map((question) => (
+          <label key={question.id} className="dhan-withdraw-question">
+            <span className="dhan-withdraw-question-label">{question.label}</span>
+            <input
+              className="dhan-withdraw-question-input"
+              type="text"
+              maxLength={4}
+              placeholder={question.placeholder}
+              value={answers[question.id]}
+              onChange={(event) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  [question.id]: event.target.value.replace(/\s/g, '').toUpperCase(),
+                }))
+              }
+            />
+          </label>
+        ))}
+      </div>
     </>
   )
 
@@ -239,6 +351,7 @@ export default function WithdrawPage({ onBack }) {
   const titles = {
     amount: 'Withdraw to Bank',
     slot: 'Select Slot',
+    verify: 'Verify Identity',
     bank: 'Confirm Withdrawal',
     success: 'Withdraw to Bank',
   }
@@ -262,6 +375,18 @@ export default function WithdrawPage({ onBack }) {
           type="button"
           className="dhan-withdraw-cta"
           disabled={!canProceedSlot}
+          onClick={goAfterSlot}
+        >
+          Proceed to Next
+        </button>
+      )
+    }
+    if (step === 'verify') {
+      return (
+        <button
+          type="button"
+          className="dhan-withdraw-cta"
+          disabled={!canProceedVerify}
           onClick={goToBank}
         >
           Proceed to Next
@@ -302,6 +427,7 @@ export default function WithdrawPage({ onBack }) {
       <div className="dhan-withdraw-body">
         {step === 'amount' && renderAmountStep()}
         {step === 'slot' && renderSlotStep()}
+        {step === 'verify' && renderVerifyStep()}
         {step === 'bank' && renderBankStep()}
         {step === 'success' && renderSuccessStep()}
       </div>
