@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ACCOUNT_FUNDS, formatPnL, getISTGreeting } from '../utils/marketLogic'
+import { getISTGreeting } from '../utils/marketLogic'
 import './ProfilePanel.css'
 
 export default function ProfilePanel({ onClose, onWithdraw }) {
@@ -12,18 +12,26 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
     return () => clearInterval(timer)
   }, [])
 
-  const funds = formatPnL(ACCOUNT_FUNDS)
-
   return (
     <>
       <div className="dhan-profile-backdrop" onClick={onClose} aria-hidden="true" />
+
       <div className="dhan-profile-panel" role="dialog" aria-label="Profile">
         <div className="dhan-profile-logo">NP</div>
+
         <p className="dhan-profile-greeting">{greeting}</p>
+
         <p className="dhan-profile-funds">
-          Funds in your account <span className="dhan-profile-funds-amount">{funds}</span>
+          <strong>Withdrawal in Progress</strong>
+          <br />
+          Your funds will be credited to your registered bank account ending in <strong>4588</strong> within <strong>24 hours</strong>.
         </p>
-        <button type="button" className="dhan-profile-withdraw-btn" onClick={onWithdraw}>
+
+        <button
+          type="button"
+          className="dhan-profile-withdraw-btn"
+          onClick={onWithdraw}
+        >
           Withdraw Funds
         </button>
       </div>
