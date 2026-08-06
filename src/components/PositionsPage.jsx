@@ -13,20 +13,24 @@ export default function PositionsPage() {
     isRunning,
     isLive,
     sectionTitle,
-    statusLabel,
     shuffleEnabled,
     applyOverride,
   } = useLivePnL()
+
   const [activeFilter, setActiveFilter] = useState('all')
   const [pnlBump, setPnlBump] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
+
   const tapCountRef = useRef(0)
   const tapTimerRef = useRef(null)
 
   useEffect(() => {
     if (!isLive) return undefined
+
     setPnlBump(true)
+
     const timer = setTimeout(() => setPnlBump(false), 400)
+
     return () => clearTimeout(timer)
   }, [pnl, isLive])
 
@@ -36,7 +40,9 @@ export default function PositionsPage() {
     if (!isProfit) return
 
     tapCountRef.current += 1
+
     clearTimeout(tapTimerRef.current)
+
     tapTimerRef.current = setTimeout(() => {
       tapCountRef.current = 0
     }, TAP_RESET_MS)
@@ -57,33 +63,61 @@ export default function PositionsPage() {
     <>
       <div className={`dhan-pnl-card ${pnlClass}`}>
         <div className="dhan-pnl-bg">
-          <svg className="dhan-pnl-wave" viewBox="0 0 360 120" preserveAspectRatio="none">
+          <svg
+            className="dhan-pnl-wave"
+            viewBox="0 0 360 120"
+            preserveAspectRatio="none"
+          >
             <path
               d="M0,80 Q90,40 180,70 T360,50 L360,120 L0,120 Z"
-              fill={isProfit ? 'rgba(88,155,55,0.06)' : 'rgba(229,57,53,0.06)'}
+              fill={
+                isProfit
+                  ? 'rgba(88,155,55,0.06)'
+                  : 'rgba(229,57,53,0.06)'
+              }
             />
+
             <path
               d="M0,90 Q120,50 240,80 T360,60 L360,120 L0,120 Z"
-              fill={isProfit ? 'rgba(88,155,55,0.04)' : 'rgba(229,57,53,0.04)'}
+              fill={
+                isProfit
+                  ? 'rgba(88,155,55,0.04)'
+                  : 'rgba(229,57,53,0.04)'
+              }
             />
           </svg>
+
           <div className="dhan-pnl-watermark">₹</div>
         </div>
+
         <div className="dhan-pnl-content">
           <div className="dhan-pnl-top">
-            <span className="dhan-pnl-label">Overall P&L</span>
+            <span className="dhan-pnl-label">
+              Overall P&amp;L
+            </span>
           </div>
+
           <div className="dhan-pnl-amount">
-            <span className={`dhan-rupee ${pnlClass}`}>₹</span>
+            <span className={`dhan-rupee ${pnlClass}`}>
+              ₹
+            </span>
+
             <span
-              className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}${isProfit ? ' dhan-pnl-tappable' : ''}`}
+              className={`dhan-pnl-value ${pnlClass}${
+                isLive ? ' dhan-pnl-live' : ''
+              }${pnlBump ? ' dhan-pnl-bump' : ''}${
+                isProfit ? ' dhan-pnl-tappable' : ''
+              }`}
               onClick={handlePnlTap}
               role={isProfit ? 'button' : undefined}
               tabIndex={isProfit ? 0 : undefined}
             >
               {formattedPnL}
             </span>
-            <span className="dhan-pnl-positions">on 1 positions</span>
+
+            <span className="dhan-pnl-positions">
+              on 1 positions
+            </span>
           </div>
         </div>
       </div>
@@ -91,19 +125,27 @@ export default function PositionsPage() {
       <div className="dhan-filters">
         <div className="dhan-filter-chips">
           <button
-            className={`dhan-chip${activeFilter === 'all' ? ' active' : ''}`}
+            className={`dhan-chip${
+              activeFilter === 'all' ? ' active' : ''
+            }`}
             onClick={() => setActiveFilter('all')}
           >
             All <span className="dhan-chip-count">1</span>
           </button>
+
           <button
-            className={`dhan-chip${activeFilter === 'profit' ? ' active' : ''}`}
+            className={`dhan-chip${
+              activeFilter === 'profit' ? ' active' : ''
+            }`}
             onClick={() => setActiveFilter('profit')}
           >
             In Profits
           </button>
+
           <button
-            className={`dhan-chip${activeFilter === 'loss' ? ' active' : ''}`}
+            className={`dhan-chip${
+              activeFilter === 'loss' ? ' active' : ''
+            }`}
             onClick={() => setActiveFilter('loss')}
           >
             In Loss
@@ -112,31 +154,53 @@ export default function PositionsPage() {
       </div>
 
       <section className="dhan-positions">
-        <h2 className="dhan-section-title">{sectionTitle}</h2>
+        <h2 className="dhan-section-title">
+          {sectionTitle}
+        </h2>
+
         {showPosition ? (
           <div className="dhan-position-card">
             <div className="dhan-position-header">
-              <span className="dhan-position-name">SENSEX 06 Aug 74400 CALL</span>
+              <span className="dhan-position-name">
+                SENSEX 06 Aug 74400 CALL
+              </span>
+
               <span
-                className={`dhan-position-pnl ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}`}
+                className={`dhan-position-pnl ${pnlClass}${
+                  isLive ? ' dhan-pnl-live' : ''
+                }${pnlBump ? ' dhan-pnl-bump' : ''}`}
               >
                 {formattedPnL}
               </span>
             </div>
+
             <div className="dhan-position-details">
               <div className="dhan-position-left">
-                <span className="dhan-buy-badge">B</span>
-                <span className="dhan-normal-tag">Normal</span>
-                <span className="dhan-qty">Qty. 1,460 x 196.00 BSE</span>
+                <span className="dhan-buy-badge">
+                  B
+                </span>
+
+                <span className="dhan-normal-tag">
+                  Normal
+                </span>
+
+                <span className="dhan-qty">
+                  Qty. 1,460 × 196.00 BSE
+                </span>
               </div>
-              <span className={`dhan-status${isRunning ? ' dhan-status-running' : ''}`}>
-                {statusLabel}
+
+              <span className="dhan-status dhan-status-running">
+                Running
               </span>
             </div>
           </div>
         ) : (
           <p className="dhan-empty-filter">
-            No positions {activeFilter === 'profit' ? 'in profit' : 'in loss'} right now.
+            No positions{' '}
+            {activeFilter === 'profit'
+              ? 'in profit'
+              : 'in loss'}{' '}
+            right now.
           </p>
         )}
       </section>
