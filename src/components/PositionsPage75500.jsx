@@ -1,270 +1,154 @@
-// src/components/PositionsPage75500.jsx
+import { useEffect, useRef, useState } from 'react'
+import useLivePnL from '../hooks/useLivePnL'
+import PnlEditorPanel from './PnlEditorPanel'
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import "./DhanPositionsReplica.css";
+const TAP_TARGET = 7
+const TAP_RESET_MS = 2500
 
-const INITIAL_PNL = 124398.38;
-const LIVE_RANGE = 5000;
-
-function formatINR(value) {
-  const sign = value < 0 ? "-" : "";
-  const abs = Math.abs(value);
-
-  return (
-    sign +
-    abs.toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  );
-}
-
-function isMarketOpen() {
-  const now = new Date();
-
-  const day = now.getDay();
-  if (day === 0 || day === 6) return false;
-
-  const minutes = now.getHours() * 60 + now.getMinutes();
-
-  return minutes >= 9 * 60 + 15 && minutes < 15 * 60 + 30;
-}
-
-export default function PositionsPage75500() {
-  const [basePnl, setBasePnl] = useState(INITIAL_PNL);
-  const [livePnl, setLivePnl] = useState(INITIAL_PNL);
-
-  const [marketOpen, setMarketOpen] = useState(isMarketOpen());
-
-  const animationRef = useRef(null);
-
-  // Hidden 7-tap editor
-  const [tapCount, setTapCount] = useState(0);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const tapTimer = useRef(null);
-
-  const marketStatus = useMemo(() => {
-    return marketOpen
-      ? {
-          text: "Market Open",
-          color: "#16c784",
-        }
-      : {
-          text: "Market Closed",
-          color: "#ff5b5b",
-        };
-  }, [marketOpen]);
+export default function PositionsPage() {
+  const {
+    pnl,
+    formattedPnL,
+    isProfit,
+    isRunning,
+    isLive,
+    sectionTitle,
+    statusLabel,
+    shuffleEnabled,
+    applyOverride,
+  } = useLivePnL()
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [pnlBump, setPnlBump] = useState(false)
+  const [showEditor, setShowEditor] = useState(false)
+  const tapCountRef = useRef(0)
+  const tapTimerRef = useRef(null)
 
   useEffect(() => {
-    const clock = setInterval(() => {
-      setMarketOpen(isMarketOpen());
-    }, 30000);
+    if (!isLive) return undefined
+    setPnlBump(true)
+    const timer = setTimeout(() => setPnlBump(false), 400)
+    return () => clearTimeout(timer)
+  }, [pnl, isLive])
 
-    return () => clearInterval(clock);
-  }, []);
+  const pnlClass = isProfit ? 'dhan-pnl-positive' : 'dhan-pnl-negative'
 
-  useEffect(() => {
-    let value = basePnl;
+  const handlePnlTap = () => {
+    if (!isProfit) return
 
-    animationRef.current = setInterval(() => {
-      value += (Math.random() - 0.5) * 900;
+    tapCountRef.current += 1
+    clearTimeout(tapTimerRef.current)
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0
+    }, TAP_RESET_MS)
 
-      const upper = basePnl + LIVE_RANGE;
-      const lower = basePnl - LIVE_RANGE;
-
-      if (value > upper) value = upper;
-      if (value < lower) value = lower;
-
-      setLivePnl(Number(value.toFixed(2)));
-    }, 1200);
-
-    return () => clearInterval(animationRef.current);
-  }, [basePnl]);
-
-  const handleHiddenTap = () => {
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-
-    const next = tapCount + 1;
-    setTapCount(next);
-
-    if (next >= 7) {
-      setTapCount(0);
-      setEditorOpen(true);
-      return;
+    if (tapCountRef.current >= TAP_TARGET) {
+      tapCountRef.current = 0
+      clearTimeout(tapTimerRef.current)
+      setShowEditor(true)
     }
+  }
 
-    tapTimer.current = setTimeout(() => {
-      setTapCount(0);
-    }, 1800);
-  };
+  const showPosition =
+    activeFilter === 'all' ||
+    (activeFilter === 'profit' && isProfit) ||
+    (activeFilter === 'loss' && !isProfit)
 
   return (
-    <div className="dhan-page">
-    <div className="dhan-header">
-      <div className="dhan-header-left">
-        <button className="dhan-back-btn">←</button>
+    <>
+      <div className={`dhan-pnl-card ${pnlClass}`}>
+        <div className="dhan-pnl-bg">
+          <svg className="dhan-pnl-wave" viewBox="0 0 360 120" preserveAspectRatio="none">
+            <path
+              d="M0,80 Q90,40 180,70 T360,50 L360,120 L0,120 Z"
+              fill={isProfit ? 'rgba(88,155,55,0.06)' : 'rgba(229,57,53,0.06)'}
+            />
+            <path
+              d="M0,90 Q120,50 240,80 T360,60 L360,120 L0,120 Z"
+              fill={isProfit ? 'rgba(88,155,55,0.04)' : 'rgba(229,57,53,0.04)'}
+            />
+          </svg>
+          <div className="dhan-pnl-watermark">₹</div>
+        </div>
+        <div className="dhan-pnl-content">
+          <div className="dhan-pnl-top">
+            <span className="dhan-pnl-label">Overall P&L</span>
+          </div>
+          <div className="dhan-pnl-amount">
+            <span className={`dhan-rupee ${pnlClass}`}>₹</span>
+            <span
+              className={`dhan-pnl-value ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}${isProfit ? ' dhan-pnl-tappable' : ''}`}
+              onClick={handlePnlTap}
+              role={isProfit ? 'button' : undefined}
+              tabIndex={isProfit ? 0 : undefined}
+            >
+              {formattedPnL}
+            </span>
+            <span className="dhan-pnl-positions">on 1 positions</span>
+          </div>
+        </div>
+      </div>
 
-        <div>
-          <h2 className="dhan-title">Positions</h2>
-
-          <div
-            className="dhan-market-status"
-            style={{ color: marketStatus.color }}
+      <div className="dhan-filters">
+        <div className="dhan-filter-chips">
+          <button
+            className={`dhan-chip${activeFilter === 'all' ? ' active' : ''}`}
+            onClick={() => setActiveFilter('all')}
           >
-            ● {marketStatus.text}
-          </div>
-        </div>
-      </div>
-
-      <div className="dhan-header-right">
-        <button className="dhan-icon-btn">⌕</button>
-        <button className="dhan-icon-btn">⋮</button>
-      </div>
-    </div>
-
-    <div className="dhan-content">
-
-      <div className="dhan-pnl-card">
-        <div className="dhan-pnl-label">Total P&amp;L</div>
-
-        <div
-          className={`dhan-total-pnl ${
-            livePnl >= 0 ? "profit" : "loss"
-          }`}
-          onClick={handleHiddenTap}
-        >
-          ₹{formatINR(livePnl)}
-        </div>
-
-        <div className="dhan-day-change">
-          Live Position
-        </div>
-      </div>
-
-      <div className="dhan-position-card">
-
-        <div className="dhan-position-top">
-
-          <div className="dhan-position-name">
-            <div className="dhan-symbol">
-              SENSEX
-            </div>
-
-            <div className="dhan-contract">
-              06 Aug 75500 CALL
-            </div>
-          </div>
-
-          <div
-            className={`dhan-position-pnl ${
-              livePnl >= 0 ? "profit" : "loss"
-            }`}
+            All <span className="dhan-chip-count">1</span>
+          </button>
+          <button
+            className={`dhan-chip${activeFilter === 'profit' ? ' active' : ''}`}
+            onClick={() => setActiveFilter('profit')}
           >
-            ₹{formatINR(livePnl)}
-          </div>
-
+            In Profits
+          </button>
+          <button
+            className={`dhan-chip${activeFilter === 'loss' ? ' active' : ''}`}
+            onClick={() => setActiveFilter('loss')}
+          >
+            In Loss
+          </button>
         </div>
+      </div>
 
-        <div className="dhan-position-divider" />
-
-        <div className="dhan-position-details">
-
-          <div className="dhan-detail-item">
-            <span>Qty</span>
-            <strong>100</strong>
-          </div>
-
-          <div className="dhan-detail-item">
-            <span>Avg</span>
-            <strong>₹225.35</strong>
-          </div>
-
-          <div className="dhan-detail-item">
-            <span>LTP</span>
-            <strong>
-              ₹{(225.35 + (livePnl - basePnl) / 100).toFixed(2)}
-            </strong>
-          </div>
-
-          <div className="dhan-detail-item">
-            <span>Product</span>
-            <strong>NRML</strong>
-          </div>
-
-        </div>
-        <div className="dhan-position-footer">
-            <div className="dhan-footer-item">
-              <span>Day P&amp;L</span>
-              <strong
-                className={
-                  livePnl >= 0 ? "profit" : "loss"
-                }
+      <section className="dhan-positions">
+        <h2 className="dhan-section-title">{sectionTitle}</h2>
+        {showPosition ? (
+          <div className="dhan-position-card">
+            <div className="dhan-position-header">
+              <span className="dhan-position-name">SENSEX 06 Aug 74400 CALL</span>
+              <span
+                className={`dhan-position-pnl ${pnlClass}${isLive ? ' dhan-pnl-live' : ''}${pnlBump ? ' dhan-pnl-bump' : ''}`}
               >
-                ₹{formatINR(livePnl)}
-              </strong>
+                {formattedPnL}
+              </span>
             </div>
-
-            <div className="dhan-footer-item">
-              <span>Net P&amp;L</span>
-              <strong
-                className={
-                  livePnl >= 0 ? "profit" : "loss"
-                }
-              >
-                ₹{formatINR(livePnl)}
-              </strong>
-            </div>
-          </div>
-
-        </div>
-
-        {editorOpen && (
-          <div className="dhan-editor-overlay">
-            <div className="dhan-editor-card">
-
-              <h3>Edit Position</h3>
-
-              <label>Base P&amp;L</label>
-
-              <input
-                type="number"
-                step="0.01"
-                value={basePnl}
-                onChange={(e) =>
-                  setBasePnl(Number(e.target.value))
-                }
-              />
-
-              <div className="dhan-editor-actions">
-                <button
-                  onClick={() => setEditorOpen(false)}
-                >
-                  Close
-                </button>
+            <div className="dhan-position-details">
+              <div className="dhan-position-left">
+                <span className="dhan-buy-badge">B</span>
+                <span className="dhan-normal-tag">Normal</span>
+                <span className="dhan-qty">Qty. 1,460 x 196.00 BSE</span>
               </div>
-
+              <span className={`dhan-status${isRunning ? ' dhan-status-running' : ''}`}>
+                {statusLabel}
+              </span>
             </div>
           </div>
+        ) : (
+          <p className="dhan-empty-filter">
+            No positions {activeFilter === 'profit' ? 'in profit' : 'in loss'} right now.
+          </p>
         )}
-              </div>
+      </section>
 
-<div className="dhan-bottom-bar">
-  <button className="dhan-bottom-btn">
-    Add
-  </button>
-
-  <button className="dhan-bottom-btn">
-    Exit
-  </button>
-
-  <button className="dhan-bottom-btn">
-    Convert
-  </button>
-
-  <button className="dhan-bottom-btn">
-    Analytics
-  </button>
-</div>
-</div>
-);
+      {showEditor && (
+        <PnlEditorPanel
+          currentPnl={pnl}
+          shuffleEnabled={shuffleEnabled}
+          onApply={applyOverride}
+          onClose={() => setShowEditor(false)}
+        />
+      )}
+    </>
+  )
 }
