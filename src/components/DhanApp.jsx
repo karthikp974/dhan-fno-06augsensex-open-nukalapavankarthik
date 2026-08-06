@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import DhanHeader from './DhanHeader'
-import PositionsPage from './PositionsPage'
+import PositionsPage75500 from './PositionsPage75500'
 import OrdersPage from './OrdersPage'
 import WithdrawPage from './WithdrawPage'
 import { LivePnLProvider } from '../hooks/useLivePnL'
@@ -24,7 +24,11 @@ export default function DhanApp() {
             />
 
             <div className="dhan-page-content">
-              {activeTab === 'positions' ? <PositionsPage /> : <OrdersPage />}
+              {activeTab === 'positions' ? (
+                <PositionsPage75500 />
+              ) : (
+                <OrdersPage />
+              )}
             </div>
           </>
         )}
