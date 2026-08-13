@@ -71,10 +71,48 @@
 }
 
 .dhan-profile-funds {
-  margin: 0;
+  margin: 12px 0 0;
   font-size: 12px;
   line-height: 1.45;
   color: var(--text-muted, #888888);
+}
+
+.dhan-profile-balance-btn {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light, #e0e0e0);
+  border-radius: 8px;
+  background: #f8f8f8;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+}
+
+.dhan-profile-balance-btn:active {
+  background: #f0f0f0;
+}
+
+.dhan-profile-balance-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted, #888888);
+  margin-bottom: 4px;
+}
+
+.dhan-profile-balance-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.dhan-profile-balance-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--green-primary, #24946f);
+  font-weight: 500;
 }
 
 .dhan-profile-funds-amount {

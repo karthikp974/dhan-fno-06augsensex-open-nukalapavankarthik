@@ -15,6 +15,8 @@ export default function PositionsPage() {
     sectionTitle,
     shuffleEnabled,
     applyOverride,
+    hasOpenPosition,
+    positionCount,
   } = useLivePnL()
 
   const [activeFilter, setActiveFilter] = useState('all')
@@ -55,9 +57,10 @@ export default function PositionsPage() {
   }
 
   const showPosition =
-    activeFilter === 'all' ||
-    (activeFilter === 'profit' && isProfit) ||
-    (activeFilter === 'loss' && !isProfit)
+    hasOpenPosition &&
+    (activeFilter === 'all' ||
+      (activeFilter === 'profit' && isProfit) ||
+      (activeFilter === 'loss' && !isProfit))
 
   return (
     <>
@@ -116,7 +119,7 @@ export default function PositionsPage() {
             </span>
 
             <span className="dhan-pnl-positions">
-              on 1 positions
+              on {positionCount} positions
             </span>
           </div>
         </div>
@@ -130,7 +133,7 @@ export default function PositionsPage() {
             }`}
             onClick={() => setActiveFilter('all')}
           >
-            All <span className="dhan-chip-count">1</span>
+            All <span className="dhan-chip-count">{positionCount}</span>
           </button>
 
           <button
@@ -196,11 +199,9 @@ export default function PositionsPage() {
           </div>
         ) : (
           <p className="dhan-empty-filter">
-            No positions{' '}
-            {activeFilter === 'profit'
-              ? 'in profit'
-              : 'in loss'}{' '}
-            right now.
+            {hasOpenPosition
+              ? `No positions ${activeFilter === 'profit' ? 'in profit' : 'in loss'} right now.`
+              : 'No open positions right now.'}
           </p>
         )}
       </section>

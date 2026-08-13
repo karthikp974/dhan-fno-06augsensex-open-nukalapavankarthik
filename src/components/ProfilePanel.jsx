@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { getISTGreeting } from '../utils/marketLogic'
+import { formatPnL, getAccountFunds, getISTGreeting } from '../utils/marketLogic'
 import './ProfilePanel.css'
 
 export default function ProfilePanel({ onClose, onWithdraw }) {
   const [greeting, setGreeting] = useState(() => getISTGreeting())
+  const [showWithdrawDetails, setShowWithdrawDetails] = useState(false)
+  const balance = formatPnL(getAccountFunds())
 
   useEffect(() => {
     const sync = () => setGreeting(getISTGreeting())
@@ -21,11 +23,26 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
 
         <p className="dhan-profile-greeting">{greeting}</p>
 
-        <p className="dhan-profile-funds">
-          <strong>Withdrawal in Progress</strong>
-          <br />
-          Your funds will be credited to your registered bank account ending in <strong>4588</strong> within <strong>24 hours</strong>.
-        </p>
+        <button
+          type="button"
+          className="dhan-profile-balance-btn"
+          onClick={() => setShowWithdrawDetails((open) => !open)}
+          aria-expanded={showWithdrawDetails}
+        >
+          <span className="dhan-profile-balance-label">Available Balance</span>
+          <span className="dhan-profile-balance-value">₹{balance}</span>
+          <span className="dhan-profile-balance-hint">
+            {showWithdrawDetails ? 'Hide details' : 'Tap for withdrawal details'}
+          </span>
+        </button>
+
+        {showWithdrawDetails && (
+          <p className="dhan-profile-funds">
+            <strong>Withdrawal in Progress</strong>
+            <br />
+            Amount will be available for withdrawal after <strong>24 hours (1:36 PM)</strong>.
+          </p>
+        )}
 
         <button
           type="button"

@@ -5,7 +5,10 @@ const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
 const MAX_LOSS = -286160
 const TRADE_EXIT_MS = Date.parse('2026-07-30T11:30:00+05:30')
 export const ACCOUNT_FUNDS = 804832.73
+export const SETTLED_ACCOUNT_FUNDS = 1194752.38
 const EXIT_PNL = ACCOUNT_FUNDS
+
+const SETTLED_DATE = '2026-08-13'
 
 const TUESDAY_DATE = '2026-07-28'
 const WEDNESDAY_DATE = '2026-07-29'
@@ -136,11 +139,24 @@ export function isDeclineSession(date = getCurrentTime()) {
   return totalMinutes >= start && totalMinutes <= close
 }
 
+export function isSettledDay(date = getCurrentTime()) {
+  const { dateKey } = getISTClock(date)
+  return dateKey >= SETTLED_DATE
+}
+
+export function getAccountFunds(date = getCurrentTime()) {
+  return isSettledDay(date) ? SETTLED_ACCOUNT_FUNDS : ACCOUNT_FUNDS
+}
+
 export function getPositionPhase(date = getCurrentTime()) {
+  const { dateKey } = getISTClock(date)
+
+  if (isSettledDay(date)) return 'settled'
+
   const nowMs = date.getTime()
   if (nowMs >= TRADE_EXIT_MS) return 'closed'
 
-  const { dateKey, totalMinutes } = getISTClock(date)
+  const { totalMinutes } = getISTClock(date)
 
   if (isMarketHoliday(date)) return 'holiday'
 
@@ -184,6 +200,7 @@ export function isLiveSession(date = getCurrentTime()) {
 
 export function getScheduledPnL(date = getCurrentTime()) {
   const phase = getPositionPhase(date)
+  if (phase === 'settled') return 0
   if (phase === 'closed') return EXIT_PNL
 
   if (phase === 'tuesday_shuffle') return getTuesdayShuffleAnchor(date)
@@ -244,7 +261,8 @@ export function getExitInfo(date = getCurrentTime()) {
 export function getPositionState(date = getCurrentTime()) {
   const phase = getPositionPhase(date)
   const pnl = getScheduledPnL(date)
-  const isRunning = phase !== 'closed'
+  const hasOpenPosition = !['closed', 'settled'].includes(phase)
+  const isRunning = hasOpenPosition
   const marketLive = isRunning && isLiveSession(date)
   const ist = getISTClock(date)
   const exitInfo = getExitInfo(date)
@@ -252,13 +270,15 @@ export function getPositionState(date = getCurrentTime()) {
   return {
     pnl,
     phase,
+    hasOpenPosition,
     isRunning,
     isLive: marketLive,
     marketLive,
     isProfit: pnl >= 0,
     formattedPnL: formatPnL(pnl),
-    sectionTitle: isRunning ? 'Open Positions' : 'Closed Positions',
+    sectionTitle: phase === 'settled' ? 'Open Positions' : isRunning ? 'Open Positions' : 'Closed Positions',
     statusLabel: isRunning ? 'Running' : 'Closed',
+    positionCount: hasOpenPosition ? 1 : 0,
     exitInfo,
     istTime: ist.label,
   }
