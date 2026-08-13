@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react'
-import { formatPnL, getAccountFunds, getISTGreeting } from '../utils/marketLogic'
+import {
+  formatPnL,
+  getAccountFunds,
+  getISTGreeting,
+  isWithdrawAvailable,
+  WITHDRAW_PENDING_NOTE,
+} from '../utils/marketLogic'
 import './ProfilePanel.css'
 
 export default function ProfilePanel({ onClose, onWithdraw }) {
   const [greeting, setGreeting] = useState(() => getISTGreeting())
   const [showWithdrawDetails, setShowWithdrawDetails] = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(() => isWithdrawAvailable())
   const balance = formatPnL(getAccountFunds())
 
   useEffect(() => {
-    const sync = () => setGreeting(getISTGreeting())
+    const sync = () => {
+      setGreeting(getISTGreeting())
+      setWithdrawOpen(isWithdrawAvailable())
+    }
     sync()
-    const timer = setInterval(sync, 60_000)
+    const timer = setInterval(sync, 10_000)
     return () => clearInterval(timer)
   }, [])
 
@@ -32,25 +42,28 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
           <span className="dhan-profile-balance-label">Available Balance</span>
           <span className="dhan-profile-balance-value">₹{balance}</span>
           <span className="dhan-profile-balance-hint">
-            {showWithdrawDetails ? 'Hide details' : 'Tap for withdrawal details'}
+            {!withdrawOpen &&
+              (showWithdrawDetails ? 'Hide details' : 'Tap for withdrawal details')}
           </span>
         </button>
 
-        {showWithdrawDetails && (
+        {showWithdrawDetails && !withdrawOpen && (
           <p className="dhan-profile-funds">
             <strong>Withdrawal in Progress</strong>
             <br />
-            Amount will be available for withdrawal after <strong>24 hours (1:36 PM)</strong>.
+            {WITHDRAW_PENDING_NOTE}
           </p>
         )}
 
-        <button
-          type="button"
-          className="dhan-profile-withdraw-btn"
-          onClick={onWithdraw}
-        >
-          Withdraw Funds
-        </button>
+        {withdrawOpen && (
+          <button
+            type="button"
+            className="dhan-profile-withdraw-btn"
+            onClick={onWithdraw}
+          >
+            Withdraw Funds
+          </button>
+        )}
       </div>
     </>
   )

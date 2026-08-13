@@ -479,3 +479,25 @@
   outline: none;
   border-color: var(--green-primary, #24946f);
 }
+
+.dhan-withdraw-pin {
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
+
+.dhan-withdraw-pin-shake {
+  animation: dhan-profile-in 0.18s ease;
+}
+
+.dhan-withdraw-pin-label {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  text-align: center;
+}
+
+.dhan-withdraw-pin-keypad {
+  margin-top: 16px;
+}

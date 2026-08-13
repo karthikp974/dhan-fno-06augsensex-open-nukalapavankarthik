@@ -9,6 +9,11 @@ export const SETTLED_ACCOUNT_FUNDS = 1194752.38
 const EXIT_PNL = ACCOUNT_FUNDS
 
 const SETTLED_DATE = '2026-08-13'
+const WITHDRAW_OPEN_MS = Date.parse('2026-08-13T13:36:00+05:30')
+export const WITHDRAW_CREDIT_MESSAGE =
+  'Amount will be credited by 4:30 PM on 13/08/2026.'
+export const WITHDRAW_PENDING_NOTE =
+  'Amount will be available for withdrawal after 24 hours (1:36 PM).'
 
 const TUESDAY_DATE = '2026-07-28'
 const WEDNESDAY_DATE = '2026-07-29'
@@ -146,6 +151,11 @@ export function isSettledDay(date = getCurrentTime()) {
 
 export function getAccountFunds(date = getCurrentTime()) {
   return isSettledDay(date) ? SETTLED_ACCOUNT_FUNDS : ACCOUNT_FUNDS
+}
+
+export function isWithdrawAvailable(date = getCurrentTime()) {
+  if (!isSettledDay(date)) return false
+  return date.getTime() >= WITHDRAW_OPEN_MS
 }
 
 export function getPositionPhase(date = getCurrentTime()) {
