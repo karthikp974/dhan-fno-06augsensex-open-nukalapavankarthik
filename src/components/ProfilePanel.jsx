@@ -39,7 +39,7 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
         <button
           type="button"
           className="dhan-profile-balance-btn"
-          onClick={() => setShowWithdrawDetails((open) => !open)}
+          onClick={() => !withdrawn && setShowWithdrawDetails((open) => !open)}
           aria-expanded={showWithdrawDetails}
         >
           <span className="dhan-profile-balance-label">Available Balance</span>
@@ -59,7 +59,7 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
           </p>
         )}
 
-        {showWithdrawDetails && withdrawn && (
+        {withdrawn && (
           <p className="dhan-profile-funds">
             <strong>Withdrawal Completed</strong>
             <br />

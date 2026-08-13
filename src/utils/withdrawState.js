@@ -15,6 +15,11 @@ function writeLocal(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
+function clearLocal() {
+  localStorage.removeItem(STORAGE_KEY)
+  remoteSynced = false
+}
+
 export function getWithdrawRecord() {
   return readLocal()
 }
@@ -33,7 +38,11 @@ export async function syncWithdrawState() {
     if (!res.ok) return
 
     const data = await res.json()
-    if (!data.withdrawn) return
+    if (!data.withdrawn) {
+      clearLocal()
+      notify()
+      return
+    }
 
     remoteSynced = true
     if (data.record && !readLocal()) {
