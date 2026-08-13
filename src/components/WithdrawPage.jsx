@@ -20,7 +20,7 @@ const BANKS = [
   {
     id: 'kotak',
     name: 'KOTAK MAHINDRA BANK LIMITED',
-    account: 'XXXX$%**',
+    account: 'XXXX4588',
     icon: 'KOTAK',
   },
 ]
