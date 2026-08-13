@@ -6,38 +6,65 @@ function getRedisConfig() {
   return url && token ? { url, token } : null
 }
 
-async function readWithdrawRecord() {
+async function redisCommand(command) {
   const config = getRedisConfig()
   if (!config) return null
 
-  const res = await fetch(`${config.url}/get/${KEY}`, {
-    headers: { Authorization: `Bearer ${config.token}` },
+  const res = await fetch(config.url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
   })
 
   if (!res.ok) return null
 
   const data = await res.json()
-  if (!data.result) return null
+  return data.result ?? null
+}
+
+async function readWithdrawRecord() {
+  const result = await redisCommand(['GET', KEY])
+  if (!result) return null
 
   try {
-    return JSON.parse(data.result)
+    return JSON.parse(result)
   } catch {
     return null
   }
 }
 
 async function writeWithdrawRecord(record) {
-  const config = getRedisConfig()
-  if (!config) return false
+  const result = await redisCommand(['SET', KEY, JSON.stringify(record)])
+  return result === 'OK'
+}
 
-  const res = await fetch(
-    `${config.url}/set/${KEY}/${encodeURIComponent(JSON.stringify(record))}`,
-    {
-      headers: { Authorization: `Bearer ${config.token}` },
-    },
-  )
+async function readRequestBody(req) {
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      try {
+        return JSON.parse(req.body)
+      } catch {
+        return null
+      }
+    }
+    return req.body
+  }
 
-  return res.ok
+  const chunks = []
+  for await (const chunk of req) {
+    chunks.push(chunk)
+  }
+
+  if (!chunks.length) return null
+
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  } catch {
+    return null
+  }
 }
 
 export default async function handler(req, res) {
@@ -52,7 +79,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      const body = await readRequestBody(req)
       const saved = await writeWithdrawRecord(body || { at: Date.now() })
       if (!saved) {
         return res.status(503).json({ ok: false, error: 'Storage unavailable' })
