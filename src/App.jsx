@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import DhanApp from './components/DhanApp'
 import PinGate from './components/PinGate'
 import { clearManualExit } from './utils/positionExit'
+import { syncWithdrawState } from './utils/withdrawState'
 import { isAllowedEntryPath, normalizeEntryUrl } from './config/appUrl'
 
 const PNL_OVERRIDE_KEY = 'dhan_pnl_override'
@@ -28,6 +29,7 @@ export default function App() {
     }
 
     normalizeEntryUrl()
+    syncWithdrawState()
     setReady(true)
   }, [])
 

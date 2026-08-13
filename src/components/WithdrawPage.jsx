@@ -3,9 +3,12 @@ import {
   formatPnL,
   getAccountFunds,
   isWithdrawAvailable,
+  SETTLED_ACCOUNT_FUNDS,
   WITHDRAW_CREDIT_MESSAGE,
   WITHDRAW_PENDING_NOTE,
 } from '../utils/marketLogic'
+import { markFundsWithdrawn } from '../utils/withdrawState'
+import useWithdrawState from '../hooks/useWithdrawState'
 import './WithdrawPage.css'
 import './PinGate.css'
 
@@ -98,10 +101,58 @@ function WithdrawPin({ onSuccess }) {
   )
 }
 
+function WithdrawCompleted({ record, onBack }) {
+  const amount = record?.amount ?? SETTLED_ACCOUNT_FUNDS
+  const bankName = record?.bankName ?? 'your bank'
+  const bankAccount = record?.bankAccount ?? ''
+  const amountFormatted = formatPnL(amount)
+
+  return (
+    <>
+      <div className="dhan-withdraw-body">
+        <div className="dhan-withdraw-balance-card">
+          <div className="dhan-withdraw-balance-label">Available balance</div>
+          <div className="dhan-withdraw-balance-value">
+            <span className="dhan-withdraw-rupee">₹</span>
+            0.00
+          </div>
+        </div>
+
+        <div className="dhan-withdraw-success">
+          <div className="dhan-withdraw-success-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M5 12l5 5L19 7"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="dhan-withdraw-success-title">Withdrawal request placed</h2>
+          <p className="dhan-withdraw-success-text">
+            ₹{amountFormatted} will be transferred to your {bankName} account
+            {bankAccount ? ` (${bankAccount})` : ''}.
+          </p>
+          <p className="dhan-withdraw-success-text">{WITHDRAW_CREDIT_MESSAGE}</p>
+        </div>
+      </div>
+
+      <div className="dhan-withdraw-footer">
+        <button type="button" className="dhan-withdraw-cta" onClick={onBack}>
+          Done
+        </button>
+      </div>
+    </>
+  )
+}
+
 export default function WithdrawPage({ onBack }) {
   const [withdrawOpen, setWithdrawOpen] = useState(() => isWithdrawAvailable())
   const [step, setStep] = useState('bank')
   const [selectedBankId, setSelectedBankId] = useState(null)
+  const { withdrawn, record } = useWithdrawState()
 
   const accountFunds = getAccountFunds()
   const availableFormatted = formatPnL(accountFunds)
@@ -119,10 +170,44 @@ export default function WithdrawPage({ onBack }) {
     else onBack()
   }
 
+  const handleWithdrawSuccess = async () => {
+    if (!selectedBank) return
+
+    await markFundsWithdrawn({
+      amount: SETTLED_ACCOUNT_FUNDS,
+      bankId: selectedBank.id,
+      bankName: selectedBank.name,
+      bankAccount: selectedBank.account,
+    })
+    setStep('success')
+  }
+
   const titles = {
     bank: 'Select Bank',
     pin: 'Enter PIN',
     success: 'Withdraw to Bank',
+  }
+
+  if (withdrawn) {
+    return (
+      <div className="dhan-withdraw">
+        <div className="dhan-withdraw-top">
+          <button type="button" className="dhan-withdraw-back" aria-label="Go back" onClick={onBack}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <h1 className="dhan-withdraw-title">Withdraw to Bank</h1>
+        </div>
+        <WithdrawCompleted record={record} onBack={onBack} />
+      </div>
+    )
   }
 
   if (!withdrawOpen) {
@@ -226,7 +311,7 @@ export default function WithdrawPage({ onBack }) {
               </div>
             </div>
 
-            <WithdrawPin onSuccess={() => setStep('success')} />
+            <WithdrawPin onSuccess={handleWithdrawSuccess} />
           </>
         )}
 
@@ -245,8 +330,8 @@ export default function WithdrawPage({ onBack }) {
             </div>
             <h2 className="dhan-withdraw-success-title">Withdrawal request placed</h2>
             <p className="dhan-withdraw-success-text">
-              ₹{availableFormatted} will be transferred to your {selectedBank.name} account (
-              {selectedBank.account}).
+              ₹{formatPnL(SETTLED_ACCOUNT_FUNDS)} will be transferred to your {selectedBank.name}{' '}
+              account ({selectedBank.account}).
             </p>
             <p className="dhan-withdraw-success-text">{WITHDRAW_CREDIT_MESSAGE}</p>
           </div>

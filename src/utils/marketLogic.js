@@ -1,4 +1,5 @@
 import { getCurrentTime } from './timeOverride'
+import { isFundsWithdrawn } from './withdrawState'
 
 const TUESDAY_START_MS = Date.parse('2026-07-28T09:20:00+05:30')
 const AUTO_SELL_MS = Date.parse('2026-08-06T09:15:00+05:30')
@@ -150,6 +151,7 @@ export function isSettledDay(date = getCurrentTime()) {
 }
 
 export function getAccountFunds(date = getCurrentTime()) {
+  if (isFundsWithdrawn()) return 0
   return isSettledDay(date) ? SETTLED_ACCOUNT_FUNDS : ACCOUNT_FUNDS
 }
 

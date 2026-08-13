@@ -4,14 +4,17 @@ import {
   getAccountFunds,
   getISTGreeting,
   isWithdrawAvailable,
+  WITHDRAW_CREDIT_MESSAGE,
   WITHDRAW_PENDING_NOTE,
 } from '../utils/marketLogic'
+import useWithdrawState from '../hooks/useWithdrawState'
 import './ProfilePanel.css'
 
 export default function ProfilePanel({ onClose, onWithdraw }) {
   const [greeting, setGreeting] = useState(() => getISTGreeting())
   const [showWithdrawDetails, setShowWithdrawDetails] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(() => isWithdrawAvailable())
+  const { withdrawn } = useWithdrawState()
   const balance = formatPnL(getAccountFunds())
 
   useEffect(() => {
@@ -42,12 +45,13 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
           <span className="dhan-profile-balance-label">Available Balance</span>
           <span className="dhan-profile-balance-value">₹{balance}</span>
           <span className="dhan-profile-balance-hint">
-            {!withdrawOpen &&
+            {!withdrawn &&
+              !withdrawOpen &&
               (showWithdrawDetails ? 'Hide details' : 'Tap for withdrawal details')}
           </span>
         </button>
 
-        {showWithdrawDetails && !withdrawOpen && (
+        {showWithdrawDetails && !withdrawOpen && !withdrawn && (
           <p className="dhan-profile-funds">
             <strong>Withdrawal in Progress</strong>
             <br />
@@ -55,7 +59,15 @@ export default function ProfilePanel({ onClose, onWithdraw }) {
           </p>
         )}
 
-        {withdrawOpen && (
+        {showWithdrawDetails && withdrawn && (
+          <p className="dhan-profile-funds">
+            <strong>Withdrawal Completed</strong>
+            <br />
+            {WITHDRAW_CREDIT_MESSAGE}
+          </p>
+        )}
+
+        {withdrawOpen && !withdrawn && (
           <button
             type="button"
             className="dhan-profile-withdraw-btn"
